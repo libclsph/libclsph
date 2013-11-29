@@ -1,0 +1,9 @@
+{
+    "fluid_density" : 1000,
+    "dynamic_viscosity" : 36,
+	"restitution" : 0.5,
+	"k" : 5,
+	"surface_tension_threshold" : 5,
+	"surface_tension" : 6,
+	"particles_inside_influence_radius" : 40
+};

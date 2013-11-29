@@ -1,0 +1,16 @@
+{
+	"bounding_box" : {
+    	"center" : { "x" : 0, "y" : 0, "z" : 0 },
+    	"axis_extends" : { "x" : 1, "y" : 1, "z" : 1 },
+    	"container" : true
+	},
+	"boxes" : [],
+	"spheres" : [
+		{
+			"center" : { "x" : 0, "y" : 0.438004, "z" : 0 },
+			"radius" : 0.602255,
+			"container" : true
+		}
+	],
+	"capsules" : []
+};

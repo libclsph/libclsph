@@ -1,0 +1,17 @@
+*.swp
+*.o
+*.a
+*.so
+*.dSYM
+*.out
+*.geo
+*.bgeo
+*.png
+.DS_Store
+*.sublime-*
+*.files
+*.user
+*.includes
+*.creator
+*.config
+*.directory
