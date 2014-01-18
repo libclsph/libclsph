@@ -1,8 +1,24 @@
 #include "houdini_file_saver.h"
+#include <sstream>
+#include <iomanip>
+#include <string>
 
 #include "../../util/houdini_geo/HoudiniFileDumpHelper.h"
 
 #define OUTPUT_FILE_NAME "frames/frame"
+
+//Taken from http://www.cplusplus.com/forum/general/15952/
+std::string ZeroPadNumber(int num)
+{
+    std::ostringstream ss;
+    ss << std::setw(9) << std::setfill('0') << num;
+    std::string result = ss.str();
+    if (result.length() > 7)
+    {
+        result.erase(0, result.length() - 7);
+    }
+    return result;
+}
 
 int houdini_file_saver::writeFrameToFile(particle* particles, const simulation_parameters& parameters) {
 
@@ -10,7 +26,7 @@ int houdini_file_saver::writeFrameToFile(particle* particles, const simulation_p
     houdini_Particle *houdini_Particles = new houdini_Particle[parameters.particles_count];
 
     std::stringstream ss;
-    ss << frames_folder_prefix << OUTPUT_FILE_NAME << ++frame_count << ".geo";
+    ss << frames_folder_prefix << OUTPUT_FILE_NAME << ZeroPadNumber(++frame_count) << ".geo";
     std::string fileName = ss.str();
 
     for(int i=0;i<parameters.particles_count;i++){
