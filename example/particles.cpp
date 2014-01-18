@@ -17,9 +17,15 @@ int main(int argc, char** argv) {
     sph_simulation simulation;
     houdini_file_saver saver = houdini_file_saver(std::string(argv[4]));
 
-    simulation.load_settings(
-        std::string("fluid_properties/") + argv[1] + std::string(".json"),
-        std::string("simulation_properties/") + argv[2] + std::string(".json"));
+    try{
+        simulation.load_settings(
+            std::string("fluid_properties/") + argv[1] + std::string(".json"),
+            std::string("simulation_properties/") + argv[2] + std::string(".json"));
+    }
+    catch (const std::exception& ex) {
+        std::cerr << ex.what() << std::endl;
+        std::exit(-1);
+    }
 
     int i = 0;
     simulation.post_frame = [&] (particle* particles, const simulation_parameters& params, bool full_frame) {

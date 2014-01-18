@@ -340,6 +340,10 @@ void sph_simulation::load_settings(std::string fluid_file_name, std::string para
         parameters.fluid_density = (float)(fluid_params.get<picojson::object>()["fluid_density"].get<double>());
         parameters.dynamic_viscosity = (float)(fluid_params.get<picojson::object>()["dynamic_viscosity"].get<double>());
         parameters.restitution = (float)(fluid_params.get<picojson::object>()["restitution"].get<double>());
+        if ( parameters.restitution <= 0 || parameters.restitution > 1) {
+            throw std::runtime_error( "Restitution has an invalid value!" );
+        }
+
         parameters.K = (float)(fluid_params.get<picojson::object>()["k"].get<double>());
         parameters.surface_tension_threshold = (float)(fluid_params.get<picojson::object>()["surface_tension_threshold"].get<double>());
         parameters.surface_tension = (float)(fluid_params.get<picojson::object>()["surface_tension"].get<double>());
