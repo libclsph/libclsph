@@ -7,7 +7,6 @@
 
 #include "sph_simulation.h"
 #include "collision_volumes_loader.h"
-#include <assert.h>
 
 const std::string BUFFER_KERNEL_FILE_NAME = "kernels/sph.cl";
 
@@ -202,22 +201,15 @@ void sph_simulation::simulate_single_frame(
     // step_1
     //-----------------------------------------------------
 
-    //Let's calculate the size of the workgroups
-    unsigned int size_of_groups = parameters.particles_count / 128;
-    assert(parameters.particles_count%128==0);
-    
-    //TODO Insure that sizeof(particle)*size_of_groups doest not exceed local memory. CL_DEVICE_LOCAL_MEM_SIZE
-            
     check_cl_error(kernel_step_1.setArg(0, input_buffer));
-    check_cl_error(kernel_step_1.setArg(1, size_of_groups * sizeof(particle) , NULL));
-    check_cl_error(kernel_step_1.setArg(2, output_buffer));
-    check_cl_error(kernel_step_1.setArg(3, parameters));
-    check_cl_error(kernel_step_1.setArg(4, cell_table_buffer));
+    check_cl_error(kernel_step_1.setArg(1, output_buffer));
+    check_cl_error(kernel_step_1.setArg(2, parameters));
+    check_cl_error(kernel_step_1.setArg(3, cell_table_buffer));
 
     check_cl_error(
         queue.enqueueNDRangeKernel(
             kernel_step_1, cl::NullRange, 
-            cl::NDRange(parameters.particles_count), cl::NDRange(size_of_groups));
+            cl::NDRange(parameters.particles_count), cl::NullRange));
 
     check_cl_error(
         queue.enqueueReadBuffer(

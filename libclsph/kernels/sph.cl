@@ -7,29 +7,15 @@
 
 void kernel step_1(
     global const particle* input_data,
-    local        particle* local_data,
     global particle* output_data,
     const simulation_parameters params,
     global const unsigned int* cell_table) {
-    
-    size_t current_particle_index = get_global_id(0);
-    size_t group_index = get_group_id(0);
-    size_t index_in_group = get_local_id(0);
-    size_t group_size = get_local_size(0);
-    
-    /* First let's copy the data we'll use to local memory */
-    //Each group will get a slice of the array to analyze
-    event_t e = async_work_group_copy (local_data, input_data + (group_index*group_size), group_size , 0);
-    wait_group_events (1, &e);
-    
-    //TODO Insure that particle array can be split evenly among work groups (host side)
-    
-    //TODO Assert that values fetched from global and local are the same
-    particle current_particle = local_data[index_in_group];
-    
-    output_data[current_particle_index] = current_particle;
 
-    //TODO Make compute_density_with_grid also use local memory
+    /* we'll get the same amount of global_ids as there are particles */
+    size_t current_particle_index = get_global_id(0);
+
+    output_data[current_particle_index] = input_data[current_particle_index];
+
     float density = compute_density_with_grid(current_particle_index, input_data, params, cell_table);
 
     output_data[current_particle_index].density = density;
