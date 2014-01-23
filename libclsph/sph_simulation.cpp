@@ -11,6 +11,8 @@
 
 const std::string BUFFER_KERNEL_FILE_NAME = "kernels/sph.cl";
 
+cl::Device* running_device;
+
 void sph_simulation::init_particles(particle* buffer, int count) {
     int particles_per_cube_side = ceil(cbrtf(parameters.particles_count));
     float side_length = cbrtf(parameters.initial_volume);
@@ -202,14 +204,19 @@ void sph_simulation::simulate_single_frame(
     // step_1
     //-----------------------------------------------------
 
-    //Let's calculate the size of the workgroups
-    unsigned int size_of_groups = parameters.particles_count / 128;
-    assert(parameters.particles_count%128==0);
-    
-    //TODO Insure that sizeof(particle)*size_of_groups doest not exceed local memory. CL_DEVICE_LOCAL_MEM_SIZE
+    //Start groups size at their maximum, make them smaller if necessary
+    //Optimally parameters.particles_count should be devisible by CL_DEVICE_MAX_WORK_GROUP_SIZE
+    unsigned int size_of_groups = running_device->getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>();
+    while(parameters.particles_count%size_of_groups!=0){
+        size_of_groups /= 2;
+    }
+
+    //Make sure that the workgroups are small enough and that the particle data will fit in local memory
+    assert( size_of_groups <= running_device->getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>() );
+    assert( size_of_groups*sizeof(particle) <= running_device->getInfo<CL_DEVICE_LOCAL_MEM_SIZE>() );
             
     check_cl_error(kernel_step_1.setArg(0, input_buffer));
-    check_cl_error(kernel_step_1.setArg(1, size_of_groups * sizeof(particle) , NULL));
+    check_cl_error(kernel_step_1.setArg(1, size_of_groups * sizeof(particle) , NULL)); //Declare local memory in arguments
     check_cl_error(kernel_step_1.setArg(2, output_buffer));
     check_cl_error(kernel_step_1.setArg(3, parameters));
     check_cl_error(kernel_step_1.setArg(4, cell_table_buffer));
@@ -217,7 +224,7 @@ void sph_simulation::simulate_single_frame(
     check_cl_error(
         queue.enqueueNDRangeKernel(
             kernel_step_1, cl::NullRange, 
-            cl::NDRange(parameters.particles_count), cl::NDRange(size_of_groups));
+            cl::NDRange(parameters.particles_count), cl::NDRange(size_of_groups)));
 
     check_cl_error(
         queue.enqueueReadBuffer(
@@ -266,6 +273,8 @@ void sph_simulation::simulate(int frame_count) {
 
     cl::CommandQueue queue(context, device_array[0], 0, &cl_error);
     check_cl_error(cl_error);
+
+    running_device = &device_array[0];
 
     std::string source = readKernelFile(BUFFER_KERNEL_FILE_NAME);
     cl::Program program;
