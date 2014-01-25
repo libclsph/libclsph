@@ -1,5 +1,5 @@
 {
-	"particles_count" : 68921,
+	"particles_count" : 64000,
     "particle_mass" : 0.0025,
     "simulation_time" : 10,
     "target_fps" : 60,
