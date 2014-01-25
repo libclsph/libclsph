@@ -8,7 +8,6 @@
 
 #include "sph_simulation.h"
 #include "collision_volumes_loader.h"
-#include <assert.h>
 
 const std::string BUFFER_KERNEL_FILE_NAME = "kernels/sph.cl";
 

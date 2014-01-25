@@ -7,11 +7,11 @@
 
 void kernel step_1(
     global const particle* input_data,
-    local        particle* local_data,
     global particle* output_data,
     const simulation_parameters params,
     global const unsigned int* cell_table) {
-    
+
+    /* we'll get the same amount of global_ids as there are particles */
     size_t current_particle_index = get_global_id(0);
     size_t group_index = get_group_id(0);
     size_t index_in_group = get_local_id(0);
