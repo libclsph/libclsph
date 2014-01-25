@@ -3,6 +3,8 @@ libclsph
 
 An OpenCL based GPU accelerated SPH fluid simulation library
 
+![alt tag](http://i.imgur.com/iambaDc.png)
+
 Why?
 -----------------------
 
