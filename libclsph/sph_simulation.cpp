@@ -4,6 +4,7 @@
 #define EXIT_ON_CL_ERROR
 
 #include "../util/pico_json/picojson.h"
+#include "../util/profile.hpp"
 
 #include "sph_simulation.h"
 #include "collision_volumes_loader.h"
@@ -149,6 +150,21 @@ void sph_simulation::simulate_single_frame(
     cl::CommandQueue& queue, cl::Context context) {
 
     //-----------------------------------------------------
+    // Calculate the optimal size for workgroups
+    //-----------------------------------------------------
+
+    //Start groups size at their maximum, make them smaller if necessary
+    //Optimally parameters.particles_count should be devisible by CL_DEVICE_MAX_WORK_GROUP_SIZE
+    unsigned int size_of_groups = running_device->getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>();
+    while(parameters.particles_count%size_of_groups!=0){
+        size_of_groups /= 2;
+    }
+
+    //Make sure that the workgroups are small enough and that the particle data will fit in local memory
+    assert( size_of_groups <= running_device->getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>() );
+    assert( size_of_groups*sizeof(particle) <= running_device->getInfo<CL_DEVICE_LOCAL_MEM_SIZE>() );
+
+    //-----------------------------------------------------
     // Initial transfer to the GPU
     //-----------------------------------------------------
 
@@ -169,7 +185,7 @@ void sph_simulation::simulate_single_frame(
     check_cl_error(
         queue.enqueueNDRangeKernel(
             kernel_locate_in_grid, cl::NullRange,
-            cl::NDRange(parameters.particles_count), cl::NullRange));
+            cl::NDRange(parameters.particles_count), cl::NDRange(size_of_groups)));
 
     check_cl_error(
         queue.enqueueReadBuffer(
@@ -203,17 +219,6 @@ void sph_simulation::simulate_single_frame(
     //-----------------------------------------------------
     // step_1
     //-----------------------------------------------------
-
-    //Start groups size at their maximum, make them smaller if necessary
-    //Optimally parameters.particles_count should be devisible by CL_DEVICE_MAX_WORK_GROUP_SIZE
-    unsigned int size_of_groups = running_device->getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>();
-    while(parameters.particles_count%size_of_groups!=0){
-        size_of_groups /= 2;
-    }
-
-    //Make sure that the workgroups are small enough and that the particle data will fit in local memory
-    assert( size_of_groups <= running_device->getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>() );
-    assert( size_of_groups*sizeof(particle) <= running_device->getInfo<CL_DEVICE_LOCAL_MEM_SIZE>() );
             
     check_cl_error(kernel_step_1.setArg(0, input_buffer));
     check_cl_error(kernel_step_1.setArg(1, size_of_groups * sizeof(particle) , NULL)); //Declare local memory in arguments
@@ -221,10 +226,14 @@ void sph_simulation::simulate_single_frame(
     check_cl_error(kernel_step_1.setArg(3, parameters));
     check_cl_error(kernel_step_1.setArg(4, cell_table_buffer));
 
+    profile("enqueue range kernel (gaussian)", profile_block::COUT_LOG) {
+
     check_cl_error(
         queue.enqueueNDRangeKernel(
             kernel_step_1, cl::NullRange, 
             cl::NDRange(parameters.particles_count), cl::NDRange(size_of_groups)));
+            queue.finish();
+    }
 
     check_cl_error(
         queue.enqueueReadBuffer(
@@ -251,7 +260,7 @@ void sph_simulation::simulate_single_frame(
     check_cl_error(
         queue.enqueueNDRangeKernel(
             kernel_step_2, cl::NullRange, 
-            cl::NDRange(parameters.particles_count), cl::NullRange));
+            cl::NDRange(parameters.particles_count), cl::NDRange(size_of_groups)));
 
     //Read the result back from the device
     check_cl_error(
