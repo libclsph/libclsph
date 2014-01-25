@@ -18,7 +18,7 @@ void kernel step_1(
     size_t group_size = get_local_size(0);
 
     /* First let's copy the data we'll use to local memory */
-    event_t e = async_work_group_copy ((__local char*)local_data, (__global const char*)input_data + (group_index*group_size*sizeof(particle)/sizeof(char)), group_size*sizeof(particle)/sizeof(char) , 0);
+    event_t e = async_work_group_copy ((__local char*)local_data, (__global const char*)input_data + (group_index*group_size*(sizeof(particle)/sizeof(char))), group_size*(sizeof(particle)/sizeof(char)) , 0);
     wait_group_events (1, &e);
     
     particle current_particle = local_data[index_in_group];

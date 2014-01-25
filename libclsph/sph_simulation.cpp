@@ -155,6 +155,9 @@ void sph_simulation::simulate_single_frame(
 
     //Start groups size at their maximum, make them smaller if necessary
     //Optimally parameters.particles_count should be devisible by CL_DEVICE_MAX_WORK_GROUP_SIZE
+    //Refer to CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE
+    //unsigned int work_group_size_multiple = kernel_locate_in_grid.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(*running_device);
+
     unsigned int size_of_groups = running_device->getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>();
     while(parameters.particles_count%size_of_groups!=0){
         size_of_groups /= 2;
@@ -226,7 +229,7 @@ void sph_simulation::simulate_single_frame(
     check_cl_error(kernel_step_1.setArg(3, parameters));
     check_cl_error(kernel_step_1.setArg(4, cell_table_buffer));
 
-    profile("enqueue range kernel (gaussian)", profile_block::COUT_LOG) {
+    profile("execute range kernel (step 1)", profile_block::COUT_LOG) {
 
     check_cl_error(
         queue.enqueueNDRangeKernel(
