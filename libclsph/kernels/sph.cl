@@ -7,6 +7,7 @@
 
 void kernel step_1(
     global const particle* input_data,
+    __local particle* local_data,
     global particle* output_data,
     const simulation_parameters params,
     global const unsigned int* cell_table) {
