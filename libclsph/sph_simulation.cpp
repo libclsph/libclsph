@@ -53,11 +53,6 @@ void sph_simulation::sort_particles(
     cl::CommandQueue& queue, cl::Context context,
     unsigned int* cell_table) {
 
-    particle* debug = new particle[parameters.particles_count];
-    for(int i = 0; i < parameters.particles_count; ++i) {
-        debug[i] = particles[i];
-    }
-
     unsigned int* count_array = new unsigned int[SORT_THREAD_COUNT * BUCKET_COUNT];
 
     cl::Buffer count_buffer(
