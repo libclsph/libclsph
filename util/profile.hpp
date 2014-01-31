@@ -8,6 +8,17 @@
 
 #define profile(name, fun) if(profile_block p = profile_block(name, fun))
 
+enum steps_enum
+{
+    STEP1,
+    STEP2,
+    SORT,
+    MEMORY_TRANSFERS
+};
+
+std::map<steps_enum,std::string> step_names    = { { STEP1, "Sph step 1" }, { STEP2, "Sph step 2" }, { SORT, "Sort" }, { MEMORY_TRANSFERS, "Memory transfers" } };
+std::map<steps_enum,long long> step_run_length = { { STEP1, 0 },            { STEP2, 0 },            { SORT, 0 },      { MEMORY_TRANSFERS, 0 } };
+
 class profile_block {
 public:
 	profile_block(std::string name, std::function<void(std::string, long long)> f = COUT_LOG)
