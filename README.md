@@ -27,4 +27,9 @@ An exemple is provided and can be run this way :
 
 The OpenCL runtime is required to use the library. If no GPU is found it will default to using the CPU.
 
+More information
+----------------
+
+Be sure to visit the [wiki](https://github.com/libclsph/libclsph/wiki) for more information.
+
 
