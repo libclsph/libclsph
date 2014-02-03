@@ -66,13 +66,16 @@ void sph_simulation::sort_particles(
             count_array[i] = 0;
         }
 
-        check_cl_error(
-            queue.enqueueWriteBuffer(input_buffer, CL_TRUE, 0,
-                sizeof(particle) * parameters.particles_count, particles));
+        profile(profile_block::MEMORY_TRANSFERS, profile_block::TALLY_STEP_TIME) {
+            check_cl_error(
+                queue.enqueueWriteBuffer(input_buffer, CL_TRUE, 0,
+                    sizeof(particle) * parameters.particles_count, particles));
 
-        check_cl_error(
-            queue.enqueueWriteBuffer(count_buffer, CL_TRUE, 0,
-                sizeof(unsigned int) * SORT_THREAD_COUNT * BUCKET_COUNT, count_array));
+            check_cl_error(
+                queue.enqueueWriteBuffer(count_buffer, CL_TRUE, 0,
+                    sizeof(unsigned int) * SORT_THREAD_COUNT * BUCKET_COUNT, count_array));
+                queue.finish();
+        }
 
         check_cl_error(kernel_sort_count.setArg(0, input_buffer));
         check_cl_error(kernel_sort_count.setArg(1, count_buffer));
@@ -81,28 +84,39 @@ void sph_simulation::sort_particles(
         check_cl_error(kernel_sort_count.setArg(4, pass_number));
         check_cl_error(kernel_sort_count.setArg(5, RADIX_WIDTH));
 
+        profile(profile_block::SORT, profile_block::TALLY_STEP_TIME) {
         check_cl_error(
             queue.enqueueNDRangeKernel(
                 kernel_sort_count, cl::NullRange,
                 cl::NDRange(SORT_THREAD_COUNT), cl::NullRange));
-
-        check_cl_error(
-            queue.enqueueReadBuffer(
-                count_buffer, CL_TRUE, 0,
-                sizeof(unsigned int) * SORT_THREAD_COUNT * BUCKET_COUNT,
-                count_array));
-
-        unsigned int running_count = 0;
-        for(int i = 0; i < SORT_THREAD_COUNT * BUCKET_COUNT; ++i) {
-            unsigned int tmp = count_array[i];
-            count_array[i] = running_count;
-            running_count += tmp;
+            queue.finish();
         }
 
-        check_cl_error(
-            queue.enqueueWriteBuffer(count_buffer, CL_TRUE, 0,
-                sizeof(unsigned int) * SORT_THREAD_COUNT * BUCKET_COUNT,
-                count_array));
+        profile(profile_block::MEMORY_TRANSFERS, profile_block::TALLY_STEP_TIME) {
+            check_cl_error(
+                queue.enqueueReadBuffer(
+                    count_buffer, CL_TRUE, 0,
+                    sizeof(unsigned int) * SORT_THREAD_COUNT * BUCKET_COUNT,
+                    count_array));
+                queue.finish();
+        }
+
+        profile(profile_block::SORT, profile_block::TALLY_STEP_TIME) {
+            unsigned int running_count = 0;
+            for(int i = 0; i < SORT_THREAD_COUNT * BUCKET_COUNT; ++i) {
+                unsigned int tmp = count_array[i];
+                count_array[i] = running_count;
+                running_count += tmp;
+            }
+        }
+
+        profile(profile_block::MEMORY_TRANSFERS, profile_block::TALLY_STEP_TIME) {
+            check_cl_error(
+                queue.enqueueWriteBuffer(count_buffer, CL_TRUE, 0,
+                    sizeof(unsigned int) * SORT_THREAD_COUNT * BUCKET_COUNT,
+                    count_array));
+                queue.finish();
+        }
 
         check_cl_error(kernel_sort.setArg(0, input_buffer));
         check_cl_error(kernel_sort.setArg(1, output_buffer));
@@ -112,15 +126,21 @@ void sph_simulation::sort_particles(
         check_cl_error(kernel_sort.setArg(5, pass_number));
         check_cl_error(kernel_sort.setArg(6, RADIX_WIDTH));
 
-        check_cl_error(
-            queue.enqueueNDRangeKernel(
-                kernel_sort, cl::NullRange,
-                cl::NDRange(SORT_THREAD_COUNT), cl::NullRange));
+        profile(profile_block::SORT, profile_block::TALLY_STEP_TIME) {
+            check_cl_error(
+                queue.enqueueNDRangeKernel(
+                    kernel_sort, cl::NullRange,
+                    cl::NDRange(SORT_THREAD_COUNT), cl::NullRange));
+                queue.finish();
+        }
 
-        check_cl_error(
-            queue.enqueueReadBuffer(output_buffer, CL_TRUE, 0,
-                sizeof(particle) * parameters.particles_count,
-                particles));
+        profile(profile_block::MEMORY_TRANSFERS, profile_block::TALLY_STEP_TIME) {
+            check_cl_error(
+                queue.enqueueReadBuffer(output_buffer, CL_TRUE, 0,
+                    sizeof(particle) * parameters.particles_count,
+                    particles));
+                queue.finish();
+        }
     }
 
     delete[] count_array;
@@ -165,10 +185,13 @@ void sph_simulation::simulate_single_frame(
     // Initial transfer to the GPU
     //-----------------------------------------------------
 
-    check_cl_error(
-        queue.enqueueWriteBuffer(
-            input_buffer, CL_TRUE, 0,
-            sizeof(particle) * parameters.particles_count, in_particles));
+    profile(profile_block::MEMORY_TRANSFERS, profile_block::TALLY_STEP_TIME) {
+        check_cl_error(
+            queue.enqueueWriteBuffer(
+                input_buffer, CL_TRUE, 0,
+                sizeof(particle) * parameters.particles_count, in_particles));
+            queue.finish();
+    }
 
     //----------------------------------------------------------------
     // Locate each particle in the grid and build the grid count table
@@ -184,12 +207,15 @@ void sph_simulation::simulate_single_frame(
             kernel_locate_in_grid, cl::NullRange,
             cl::NDRange(parameters.particles_count), cl::NDRange(size_of_groups)));
 
-    check_cl_error(
-        queue.enqueueReadBuffer(
-            output_buffer,
-            CL_TRUE, 0,
-            sizeof(particle) * parameters.particles_count,
-            out_particles));
+    profile(profile_block::MEMORY_TRANSFERS, profile_block::TALLY_STEP_TIME) {
+        check_cl_error(
+            queue.enqueueReadBuffer(
+                output_buffer,
+                CL_TRUE, 0,
+                sizeof(particle) * parameters.particles_count,
+                out_particles));
+            queue.finish();
+    }
 
     sort_particles(
         out_particles,
@@ -203,15 +229,18 @@ void sph_simulation::simulate_single_frame(
         CL_MEM_READ_WRITE |  CL_MEM_ALLOC_HOST_PTR ,  
         sizeof(unsigned int) * SORT_THREAD_COUNT * BUCKET_COUNT);
     
-    check_cl_error(
-        queue.enqueueWriteBuffer(
-            cell_table_buffer, CL_TRUE, 0,
-            sizeof(unsigned int) * parameters.grid_cell_count, cell_table));
+    profile(profile_block::MEMORY_TRANSFERS, profile_block::TALLY_STEP_TIME) {
+        check_cl_error(
+            queue.enqueueWriteBuffer(
+                cell_table_buffer, CL_TRUE, 0,
+                sizeof(unsigned int) * parameters.grid_cell_count, cell_table));
 
-    check_cl_error(
-        queue.enqueueWriteBuffer(
-            input_buffer, CL_TRUE, 0,
-            sizeof(particle) * parameters.particles_count, out_particles));
+        check_cl_error(
+            queue.enqueueWriteBuffer(
+                input_buffer, CL_TRUE, 0,
+                sizeof(particle) * parameters.particles_count, out_particles));
+            queue.finish();
+    }
 
     //-----------------------------------------------------
     // step_1
@@ -223,30 +252,35 @@ void sph_simulation::simulate_single_frame(
     check_cl_error(kernel_step_1.setArg(3, parameters));
     check_cl_error(kernel_step_1.setArg(4, cell_table_buffer));
 
-    profile("execute range kernel (step 1)", profile_block::COUT_LOG) {
-
-    check_cl_error(
-        queue.enqueueNDRangeKernel(
-            kernel_step_1, cl::NullRange, 
-            cl::NDRange(parameters.particles_count), cl::NDRange(size_of_groups)));
-            queue.finish();
+    profile(profile_block::STEP_1, profile_block::TALLY_STEP_TIME) {
+        check_cl_error(
+            queue.enqueueNDRangeKernel(
+                kernel_step_1, cl::NullRange,
+                cl::NDRange(parameters.particles_count), cl::NDRange(size_of_groups)));
+                queue.finish();
     }
 
-    check_cl_error(
-        queue.enqueueReadBuffer(
-            output_buffer,
-            CL_TRUE, 0,
-            sizeof(particle) * parameters.particles_count,
-            out_particles));
+    profile(profile_block::MEMORY_TRANSFERS, profile_block::TALLY_STEP_TIME) {
+        check_cl_error(
+            queue.enqueueReadBuffer(
+                output_buffer,
+                CL_TRUE, 0,
+                sizeof(particle) * parameters.particles_count,
+                out_particles));
+            queue.finish();
+    }
 
     //-----------------------------------------------------
     // step_2
     //-----------------------------------------------------
 
-    check_cl_error(
-        queue.enqueueWriteBuffer(
-            input_buffer, CL_TRUE, 0,
-            sizeof(particle) * parameters.particles_count, out_particles));
+    profile(profile_block::MEMORY_TRANSFERS, profile_block::TALLY_STEP_TIME) {
+        check_cl_error(
+            queue.enqueueWriteBuffer(
+                input_buffer, CL_TRUE, 0,
+                sizeof(particle) * parameters.particles_count, out_particles));
+            queue.finish();
+    }
 
     check_cl_error(kernel_step_2.setArg(0, input_buffer));
     check_cl_error(kernel_step_2.setArg(1, output_buffer));
@@ -254,16 +288,22 @@ void sph_simulation::simulate_single_frame(
     check_cl_error(kernel_step_2.setArg(3, volumes));
     check_cl_error(kernel_step_2.setArg(4, cell_table_buffer));
 
-    check_cl_error(
-        queue.enqueueNDRangeKernel(
-            kernel_step_2, cl::NullRange, 
-            cl::NDRange(parameters.particles_count), cl::NDRange(size_of_groups)));
+    profile(profile_block::STEP_2, profile_block::TALLY_STEP_TIME) {
+        check_cl_error(
+            queue.enqueueNDRangeKernel(
+                kernel_step_2, cl::NullRange,
+                cl::NDRange(parameters.particles_count), cl::NDRange(size_of_groups)));
+        queue.finish();
+    }
 
-    //Read the result back from the device
-    check_cl_error(
-        queue.enqueueReadBuffer(
-            output_buffer, CL_TRUE, 0,
-            sizeof(particle) * parameters.particles_count, out_particles));
+
+    profile(profile_block::MEMORY_TRANSFERS, profile_block::TALLY_STEP_TIME) {
+        check_cl_error(
+            queue.enqueueReadBuffer(
+                output_buffer, CL_TRUE, 0,
+                sizeof(particle) * parameters.particles_count, out_particles));
+            queue.finish();
+    }
 }
 
 void sph_simulation::simulate(int frame_count) {
@@ -335,7 +375,13 @@ void sph_simulation::simulate(int frame_count) {
                 kernel_sort_count, kernel_sort,
                 queue, context);
 
-            if(post_frame) post_frame(particles, parameters, false);
+            //Here we assume that post_frame does file IO
+            profile(profile_block::FILE_IO, profile_block::TALLY_STEP_TIME) {
+                if(post_frame) post_frame(particles, parameters, false);
+            }
+
+            profile_block::print_stats();
+            profile_block::reset_stats();
         }
 
         if(post_frame) post_frame(particles, parameters, true);

@@ -17,7 +17,8 @@ public:
         STEP_1,
         STEP_2,
         SORT,
-        MEMORY_TRANSFERS
+        MEMORY_TRANSFERS,
+        FILE_IO
     };
 
     profile_block(std::string name, std::function<void(std::string, long long)> f = COUT_LOG)
@@ -48,12 +49,12 @@ public:
 
         long long total_time = 0;
 
-        for ( int step_ID = STEP_1; step_ID <= MEMORY_TRANSFERS; step_ID++ ) {
+        for ( int step_ID = STEP_1; step_ID <= FILE_IO; step_ID++ ) {
             steps_enum step = static_cast<steps_enum>(step_ID);
             total_time +=step_run_length[step];
         }
 
-        for ( int step_ID = STEP_1; step_ID <= MEMORY_TRANSFERS; step_ID++ ) {
+        for ( int step_ID = STEP_1; step_ID <= FILE_IO; step_ID++ ) {
             steps_enum step = static_cast<steps_enum>(step_ID);
 
             std::cout << std::fixed << std::setprecision(3) <<
@@ -61,6 +62,10 @@ public:
                       step_names[step] << " and accounted for " << ((double)step_run_length[step]/(double)total_time)*100 << "%" << " of the processing time." << std::endl;
         }
 
+    }
+
+    static void reset_stats(){
+        profile_block::step_run_length = { { STEP_1, 0 },{ STEP_2, 0 },{ SORT, 0 },{ MEMORY_TRANSFERS, 0 },{ FILE_IO, 0 } };
     }
 
     operator bool() const {
@@ -81,8 +86,13 @@ private:
     std::function<void(steps_enum, long long)> func_tally;
 };
 
-std::map<profile_block::steps_enum,std::string> profile_block::step_names    = { { STEP_1, "Sph step 1" }, { STEP_2, "Sph step 2" }, { SORT, "Sort" }, { MEMORY_TRANSFERS, "Memory transfers" } };
-std::map<profile_block::steps_enum,long long>   profile_block::step_run_length = { { STEP_1, 0 },{ STEP_2, 0 },{ SORT, 0 },{ MEMORY_TRANSFERS, 0 } };
+std::map<profile_block::steps_enum,std::string> profile_block::step_names    = { { STEP_1,           "Sph step 1      " },
+                                                                                 { STEP_2,           "Sph step 2      " },
+                                                                                 { SORT,             "Sort            " },
+                                                                                 { MEMORY_TRANSFERS, "Memory transfers" },
+                                                                                 { FILE_IO,          "File IO         " }};
+
+std::map<profile_block::steps_enum,long long>   profile_block::step_run_length = { { STEP_1, 0 },{ STEP_2, 0 },{ SORT, 0 },{ MEMORY_TRANSFERS, 0 },{ FILE_IO, 0 } };
 
 std::function<void(profile_block::steps_enum,long long)> profile_block::TALLY_STEP_TIME=
 [] (profile_block::steps_enum step, long long elapsed) {
