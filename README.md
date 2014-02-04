@@ -8,7 +8,7 @@ An OpenCL based GPU accelerated SPH fluid simulation library
 Why?
 -----------------------
 
-Libclsph was created at [ÉTS](http://etsmtl.ca/) to explore the possibilty of using the power of OpenCL to speed up the simulation of SPH fluid mechanics.
+Libclsph was created to explore the possibilty of using the power of OpenCL to speed up the simulation of SPH fluid mechanics.
 
 Smoothed particle hydrodynamics is a fluid simulation technique that can be used to produce realistic simulations for animation,CGI or videogames.
 
