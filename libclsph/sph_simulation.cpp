@@ -158,7 +158,7 @@ void sph_simulation::simulate_single_frame(
     particle* in_particles, particle* out_particles,
     cl::Buffer& input_buffer, cl::Buffer& output_buffer,
     unsigned int* cell_table,
-    cl::Kernel& kernel_locate_in_grid,cl::Kernel& kernel_build_grid, cl::Kernel& kernel_step_1,
+    cl::Kernel& kernel_locate_in_grid, cl::Kernel& kernel_step_1,
     cl::Kernel& kernel_step_2, 
     cl::Kernel& kernel_sort_count, cl::Kernel& kernel_sort,
     cl::CommandQueue& queue, cl::Context context) {
@@ -335,9 +335,6 @@ void sph_simulation::simulate(int frame_count) {
     cl::Kernel kernel_locate_in_grid = cl::Kernel(program, "locate_in_grid", &cl_error);
     check_cl_error(cl_error);
 
-    cl::Kernel kernel_build_grid = cl::Kernel(program, "build_grid", &cl_error);
-    check_cl_error(cl_error);
-
     cl::Kernel kernel_sort_count = cl::Kernel(program, "sort_count", &cl_error);
     check_cl_error(cl_error);
 
@@ -371,7 +368,7 @@ void sph_simulation::simulate(int frame_count) {
                 particles, particles,
                 input_buffer, output_buffer,
                 cell_table,
-                kernel_locate_in_grid, kernel_build_grid, kernel_step_1, kernel_step_2, 
+                kernel_locate_in_grid, kernel_step_1, kernel_step_2,
                 kernel_sort_count, kernel_sort,
                 queue, context);
 

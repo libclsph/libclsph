@@ -66,35 +66,4 @@ void kernel locate_in_grid(
     
     out_particles[current_particle_index].grid_index = grid_index;
 }
-
-/**
-* build_grid
-* 1)Builds and fills the spatial grid representation.
-*
-* Parameters:---------------------------------------------------------------
-* (in)  particles               : The buffer contaning all the particle data
-* (in)  params                  : The simulation parameters
-* (out) grid_cell_index         : Has one element for each grid cell.Keeps track of how many elements were inserted in the grid until now
-* (out) grid_cell_particle_list : The grid representation. Ids of the particles contained in grid cell {X,Y,Z} can be found at [ (X*grid_width+Y*grid_height+Z*grid_depth) : (X*grid_width+Y*grid_height+Z*grid_depth)+grid_cell_capacity]
-*
-* Kernel information:----------------------------------------------------
-* Global work group size : particles_count
-*/
-void kernel build_grid(
-    global particle* particles,
-    simulation_parameters params,
-    global volatile int* grid_cell_index,
-    global int* grid_cell_particle_list){
-
-    size_t current_particle_index = get_global_id(0);
-
-    int grid_index = particles[current_particle_index].grid_index;
-
-    //atomic_inc returns the old value
-    int list_index = atomic_inc(&grid_cell_index[grid_index]);
-
-    //Write the particle grid position in the grid_cell_particle_list
-    grid_cell_particle_list[grid_index*params.grid_cell_capacity+list_index]=current_particle_index;
-}
-
 #endif

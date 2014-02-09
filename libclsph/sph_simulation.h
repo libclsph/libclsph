@@ -39,7 +39,7 @@ private:
 		particle*, particle*,
 	    cl::Buffer&, cl::Buffer&,
 	    unsigned int*,
-	    cl::Kernel&, cl::Kernel&, cl::Kernel&, cl::Kernel&, cl::Kernel&,
+        cl::Kernel&, cl::Kernel&, cl::Kernel&, cl::Kernel&,
 	    cl::Kernel&, cl::CommandQueue&, cl::Context);
 };
 
