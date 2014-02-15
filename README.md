@@ -32,4 +32,10 @@ More information
 
 Be sure to visit the [wiki](https://github.com/libclsph/libclsph/wiki) for more information.
 
+Libraries used
+----------------
+[picojson](https://github.com/kazuho/picojson) is used to load simulation properties from files.
+
+[cerea](http://uscilab.github.io/cereal/) is used for all serialization needs.
+
 
