@@ -5,6 +5,7 @@
 
 #include "../util/pico_json/picojson.h"
 #include "../util/profile.hpp"
+#include "../util/cereal/archives/binary.hpp"
 
 #include "sph_simulation.h"
 #include "collision_volumes_loader.h"
@@ -13,7 +14,8 @@ const std::string BUFFER_KERNEL_FILE_NAME = "kernels/sph.cl";
 
 cl::Device* running_device;
 
-void sph_simulation::init_particles(particle* buffer, int count) {
+void sph_simulation::init_particles(particle* buffer , const simulation_parameters &parameters ) {
+
     int particles_per_cube_side = ceil(cbrtf(parameters.particles_count));
     float side_length = cbrtf(parameters.initial_volume);
     float spacing = side_length / (float)particles_per_cube_side;
@@ -21,25 +23,42 @@ void sph_simulation::init_particles(particle* buffer, int count) {
     std::cout << "volume: " << parameters.initial_volume <<
     " side_length: " << side_length << " spacing: " << spacing << std::endl;
 
-    for(int i = 0; i < count; ++i) {
-        //Arrange the particles in the form of a cube
-        buffer[i].position.s[0] = (float)(i % particles_per_cube_side) * spacing - side_length / 2.f;
-        buffer[i].position.s[1] = ((float)((i / particles_per_cube_side) % particles_per_cube_side) * spacing);
-        buffer[i].position.s[2] = (float)(i / (particles_per_cube_side * particles_per_cube_side)) * spacing - side_length / 2.f;
-        
-        buffer[i].velocity.s[0] = 0.f;
-        buffer[i].velocity.s[1] = 0.f;
-        buffer[i].velocity.s[2] = 0.f;
-        buffer[i].intermediate_velocity.s[0] = 0.f;
-        buffer[i].intermediate_velocity.s[1] = 0.f;
-        buffer[i].intermediate_velocity.s[2] = 0.f;
-        buffer[i].constant_acceleration.s[0] = parameters.constant_acceleration.s[0];
-        buffer[i].constant_acceleration.s[1] = parameters.constant_acceleration.s[1];
-        buffer[i].constant_acceleration.s[2] = parameters.constant_acceleration.s[2];
+    //Last simualtion serialized its last frame
+    //Lets load that and pick up where it let off
+    std::filebuf fb;
+    if (fb.open ("last_frame.bin",std::ios::in) )
+    {
+        std::istream file_in(&fb);
 
-        buffer[i].density = 0.f;
-        buffer[i].pressure = 0.f;
+        cereal::BinaryInputArchive archive(file_in);
+        archive.loadBinary(buffer,sizeof(particle)*parameters.particles_count);
+
+        fb.close();
     }
+    //No serialized particle array was found
+    //Initialize the particles in their default position
+    else{
+        for(int i = 0; i < parameters.particles_count; ++i) {
+            //Arrange the particles in the form of a cube
+            buffer[i].position.s[0] = (float)(i % particles_per_cube_side) * spacing - side_length / 2.f;
+            buffer[i].position.s[1] = ((float)((i / particles_per_cube_side) % particles_per_cube_side) * spacing);
+            buffer[i].position.s[2] = (float)(i / (particles_per_cube_side * particles_per_cube_side)) * spacing - side_length / 2.f;
+
+            buffer[i].velocity.s[0] = 0.f;
+            buffer[i].velocity.s[1] = 0.f;
+            buffer[i].velocity.s[2] = 0.f;
+            buffer[i].intermediate_velocity.s[0] = 0.f;
+            buffer[i].intermediate_velocity.s[1] = 0.f;
+            buffer[i].intermediate_velocity.s[2] = 0.f;
+            buffer[i].constant_acceleration.s[0] = parameters.constant_acceleration.s[0];
+            buffer[i].constant_acceleration.s[1] = parameters.constant_acceleration.s[1];
+            buffer[i].constant_acceleration.s[2] = parameters.constant_acceleration.s[2];
+
+            buffer[i].density = 0.f;
+            buffer[i].pressure = 0.f;
+        }
+    }
+
 }
 
 #define SORT_THREAD_COUNT 1024
@@ -354,7 +373,7 @@ void sph_simulation::simulate(int frame_count) {
     cl::Buffer output_buffer(context, CL_MEM_READ_WRITE |  CL_MEM_ALLOC_HOST_PTR ,  sizeof(particle) * parameters.particles_count);
 
     particle* particles = new particle[parameters.particles_count];
-    init_particles(particles, parameters.particles_count);
+    init_particles(particles,parameters);
 
     std::cout << std::endl;
 
@@ -432,6 +451,7 @@ void sph_simulation::load_settings(std::string fluid_file_name, std::string para
         parameters.constant_acceleration.s[2] = (float)(sim_params.get<picojson::object>()["constant_acceleration"].get<picojson::object>()["z"].get<double>());
 
         write_intermediate_frames = sim_params.get<picojson::object>()["write_all_frames"].get<bool>();
+        serialize = sim_params.get<picojson::object>()["serialize"].get<bool>();
     }
 
     parameters.total_mass = parameters.particles_count * parameters.particle_mass;

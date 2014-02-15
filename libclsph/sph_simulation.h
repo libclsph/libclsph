@@ -2,7 +2,6 @@
 #define _SPH_SIMULATION_H_
 
 #include <functional>
-
 #include "common/structures.h"
 
 class sph_simulation {
@@ -24,9 +23,10 @@ public:
 	void load_settings(std::string fluid_file_name, std::string parameters_file_name);
 
 	bool write_intermediate_frames;
+    bool serialize;
 
 private:
-	void init_particles(particle* buffer, int count);
+    void init_particles(particle* buffer,const simulation_parameters&);
 
 	void sort_particles(
 		particle*,

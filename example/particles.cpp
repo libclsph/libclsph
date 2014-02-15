@@ -5,6 +5,7 @@
 
 #include "sph_simulation.h"
 #include "file_save_delegates/houdini_file_saver.h"
+#include "../util/cereal/archives/binary.hpp"
 
 int main(int argc, char** argv) {
 
@@ -32,7 +33,15 @@ int main(int argc, char** argv) {
         if(simulation.write_intermediate_frames != full_frame) {
             saver.writeFrameToFile(particles, params);
         }
-        std::cout << "frame: " << i++ << std::endl;
+
+        //Lets serialize the frames if it was specified
+        if(simulation.serialize){
+            std::ofstream file_out( "last_frame.bin" );
+            cereal::BinaryOutputArchive archive(file_out);
+            archive.saveBinary(particles,sizeof(particle)*params.particles_count);
+        }
+
+        std::cout << "frame: " << i++ << std::endl << std::endl ;
     };
 
     std::cout << std::endl << 
@@ -43,6 +52,7 @@ int main(int argc, char** argv) {
         "Time delta:                " << simulation.parameters.time_delta << std::endl <<
         "Simulation scale:          " << simulation.parameters.simulation_scale << std::endl <<
         "Write intermediate frames: " << (simulation.write_intermediate_frames ? "true" : "false") << std::endl <<
+        "Serialize frames:          " << (simulation.serialize ? "true" : "false") << std::endl <<
         std::endl <<
         "Particle count:            " << simulation.parameters.particles_count << std::endl <<
         "Particle mass:             " << simulation.parameters.particle_mass << std::endl <<
@@ -61,6 +71,31 @@ int main(int argc, char** argv) {
         "Saving to folder:          " << saver.frames_folder_prefix + "frames/" << std::endl;
 
     simulation.load_scene(std::string("scenes/") + argv[3] + std::string(".json"));
+
+    //If the serialization data is not the right size, delete it
+    //This probably means the last simulation ran with a different number of particles or the serialization was interrupted
+    std::filebuf fb;
+    if (fb.open ("last_frame.bin",std::ios::in))
+    {
+        std::istream file_in(&fb);
+
+        file_in.seekg(0,std::ios_base::end);
+
+        size_t file_size = file_in.tellg();
+
+        //This information is important, it indicates that the behavior of the simulator is completely different, use color to draw attention of user
+
+        if(file_size == simulation.parameters.particles_count*sizeof(particle)){
+            std::cout << std::endl << "\033[1;32m Serialized frame found. " << " Simulation will pick up where last run left off.\033[0m";
+            std::cout << std::endl << "\033[1;32m To start a new simulation, delete last_frame.bin. \033[0m" << std::endl;
+        }
+        else{
+            std::cout << std::endl << "\033[1;31m Serialized frame of incorrect size found. Revert to last know settings or delete it, then try again. \033[0m" << std::endl;
+            return 0;
+        }
+
+        fb.close();
+    }
 
     std::cout << std::endl << 
         "Revise simulation parameters.  Press q to quit, any other key to proceed with simulation" << std::endl;

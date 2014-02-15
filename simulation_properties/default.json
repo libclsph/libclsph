@@ -5,6 +5,7 @@
     "target_fps" : 60,
     "simulation_scale" : 0.1,
     "write_all_frames" : true,
+    "serialize" : true,
     "constant_acceleration" : {
     	"x" : 0, "y" : -9.8, "z" : 0
     }
