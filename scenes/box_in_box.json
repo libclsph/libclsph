@@ -1,13 +1,13 @@
 {
 	"bounding_box" : {
     	"center" : { "x" : 0, "y" : 0, "z" : 0 },
-    	"axis_extends" : { "x" : 1, "y" : 1, "z" : 1 },
+    	"axis_extends" : { "x" : 5, "y" : 5, "z" : 5 },
     	"container" : true
 	},
 	"boxes" : [
 		{
-	    	"center" : { "x" : 0.2737525, "y" : 0.2737525, "z" : 0 },
-	    	"axis_extends" : { "x" : 0.547505, "y" : 0.2737525, "z" : 0.2737525 },
+	    	"center" : { "x" : 0.795, "y" : 0.795, "z" : 0 },
+	    	"axis_extends" : { "x" : 1.59, "y" : 0.795, "z" : 0.795 },
 	    	"container" : true
 		}
 	],

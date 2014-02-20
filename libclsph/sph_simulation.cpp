@@ -176,7 +176,6 @@ void sph_simulation::sort_particles(
 void sph_simulation::simulate_single_frame(
     particle* in_particles, particle* out_particles,
     cl::Buffer& input_buffer, cl::Buffer& output_buffer,
-    unsigned int* cell_table,
     cl::Kernel& kernel_locate_in_grid, cl::Kernel& kernel_step_1,
     cl::Kernel& kernel_step_2, 
     cl::Kernel& kernel_sort_count, cl::Kernel& kernel_sort,
@@ -212,6 +211,37 @@ void sph_simulation::simulate_single_frame(
             queue.finish();
     }
 
+    cl_float min_x, max_x, min_y, max_y, min_z, max_z;
+    min_x = min_y = min_z = std::numeric_limits<cl_int>::max();
+    max_x = max_y = max_z = std::numeric_limits<cl_int>::min();
+    for(size_t i = 0; i < parameters.particles_count; ++i) {
+        cl_float3 pos = in_particles[i].position;
+
+        if(pos.s[0] < min_x) min_x = pos.s[0];
+        if(pos.s[1] < min_y) min_y = pos.s[1];
+        if(pos.s[2] < min_z) min_z = pos.s[2];
+
+        if(pos.s[0] > max_x) max_x = pos.s[0];
+        if(pos.s[1] > max_y) max_y = pos.s[1];
+        if(pos.s[2] > max_z) max_z = pos.s[2];
+    }
+
+    parameters.min_point.s[0] = min_x;
+    parameters.min_point.s[1] = min_y;
+    parameters.min_point.s[2] = min_z;
+    parameters.max_point.s[0] = max_x; 
+    parameters.max_point.s[1] = max_y; 
+    parameters.max_point.s[2] = max_z;
+
+    parameters.grid_size_x = (int)((max_x - min_x) / (parameters.h * 2) + 1);
+    parameters.grid_size_y = (int)((max_y - min_y) / (parameters.h * 2) + 1);
+    parameters.grid_size_z = (int)((max_z - min_z) / (parameters.h * 2) + 1);
+    parameters.grid_cell_count = parameters.grid_size_x * parameters.grid_size_y * parameters.grid_size_z;
+
+    std::cout << "Grid size:" << parameters.grid_size_x << ":" << parameters.grid_size_y << ":" << parameters.grid_size_z << std::endl;
+
+    unsigned int* cell_table = new unsigned int[parameters.grid_cell_count];
+
     //----------------------------------------------------------------
     // Locate each particle in the grid and build the grid count table
     //----------------------------------------------------------------
@@ -246,7 +276,7 @@ void sph_simulation::simulate_single_frame(
     cl::Buffer cell_table_buffer(
         context,  
         CL_MEM_READ_WRITE |  CL_MEM_ALLOC_HOST_PTR ,  
-        sizeof(unsigned int) * SORT_THREAD_COUNT * BUCKET_COUNT);
+        sizeof(unsigned int) * parameters.grid_cell_count);
     
     profile(profile_block::MEMORY_TRANSFERS, profile_block::TALLY_STEP_TIME) {
         check_cl_error(
@@ -323,6 +353,8 @@ void sph_simulation::simulate_single_frame(
                 sizeof(particle) * parameters.particles_count, out_particles));
             queue.finish();
     }
+
+    delete[] cell_table;
 }
 
 void sph_simulation::simulate(int frame_count) {
@@ -360,15 +392,6 @@ void sph_simulation::simulate(int frame_count) {
     cl::Kernel kernel_sort = cl::Kernel(program, "sort", &cl_error);
     check_cl_error(cl_error);
 
-    parameters.grid_size_x = (int)(volumes.scene_bounding_box.axis_extends.s[0] * 2 / (parameters.h * 2));
-    parameters.grid_size_y = (int)(volumes.scene_bounding_box.axis_extends.s[1] * 2 / (parameters.h * 2));
-    parameters.grid_size_z = (int)(volumes.scene_bounding_box.axis_extends.s[2] * 2 / (parameters.h * 2));
-    parameters.grid_cell_count = parameters.grid_size_x * parameters.grid_size_y * parameters.grid_size_z;
-
-    std::cout << "Grid size:" << parameters.grid_size_x << ":" << parameters.grid_size_y << ":" << parameters.grid_size_z << std::endl;
-
-    unsigned int* cell_table = new unsigned int[parameters.grid_cell_count];
-
     cl::Buffer input_buffer(context,  CL_MEM_READ_WRITE |  CL_MEM_ALLOC_HOST_PTR ,  sizeof(particle) * parameters.particles_count);
     cl::Buffer output_buffer(context, CL_MEM_READ_WRITE |  CL_MEM_ALLOC_HOST_PTR ,  sizeof(particle) * parameters.particles_count);
 
@@ -378,7 +401,11 @@ void sph_simulation::simulate(int frame_count) {
     std::cout << std::endl;
 
     for(int i = 0; i < frame_count; ++i) {
-        if(pre_frame) pre_frame(particles, parameters, true);
+        if(pre_frame)  {
+            profile("pre-frame", profile_block::COUT_LOG) {
+                pre_frame(particles, parameters, true);
+            }
+        }
 
         for(int j = 0; (float)j < (1.f / parameters.simulation_scale); ++j) {
             if(pre_frame) pre_frame(particles, parameters, false);
@@ -386,7 +413,6 @@ void sph_simulation::simulate(int frame_count) {
             simulate_single_frame(
                 particles, particles,
                 input_buffer, output_buffer,
-                cell_table,
                 kernel_locate_in_grid, kernel_step_1, kernel_step_2,
                 kernel_sort_count, kernel_sort,
                 queue, context);
@@ -400,10 +426,13 @@ void sph_simulation::simulate(int frame_count) {
             profile_block::reset_stats();
         }
 
-        if(post_frame) post_frame(particles, parameters, true);
+        if(post_frame) {
+            profile("post-frame", profile_block::COUT_LOG) {
+                post_frame(particles, parameters, true);
+            }
+        }
     }
     delete[] particles;
-    delete[] cell_table;
 }
 
 void sph_simulation::load_scene(std::string scene_file_name) {
@@ -425,7 +454,7 @@ void sph_simulation::load_settings(std::string fluid_file_name, std::string para
         parameters.fluid_density = (float)(fluid_params.get<picojson::object>()["fluid_density"].get<double>());
         parameters.dynamic_viscosity = (float)(fluid_params.get<picojson::object>()["dynamic_viscosity"].get<double>());
         parameters.restitution = (float)(fluid_params.get<picojson::object>()["restitution"].get<double>());
-        if ( parameters.restitution <= 0 || parameters.restitution > 1) {
+        if ( parameters.restitution < 0 || parameters.restitution > 1) {
             throw std::runtime_error( "Restitution has an invalid value!" );
         }
 

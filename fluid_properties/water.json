@@ -1,7 +1,7 @@
 {
     "fluid_density" : 998.29,
     "dynamic_viscosity" : 3.5,
-	"restitution" : 0,
+	"restitution" : 0.001,
 	"k" : 100,
 	"surface_tension_threshold" : 7.065,
 	"surface_tension" : 0.0728,

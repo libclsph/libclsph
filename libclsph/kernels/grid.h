@@ -53,9 +53,9 @@ void kernel locate_in_grid(
 
     float3 position_in_grid = {0.f,0.f,0.f};
     
-    float x_min = volumes.scene_bounding_box.center.x - volumes.scene_bounding_box.axis_extends.x;
-    float y_min = volumes.scene_bounding_box.center.y - volumes.scene_bounding_box.axis_extends.y;
-    float z_min = volumes.scene_bounding_box.center.z - volumes.scene_bounding_box.axis_extends.z;
+    float x_min = params.min_point.x;
+    float y_min = params.min_point.y;
+    float z_min = params.min_point.z;
     
     //Grid cells will always have a radius length h
     position_in_grid.x = (particles[current_particle_index].position.x - x_min) / (params.h * 2);

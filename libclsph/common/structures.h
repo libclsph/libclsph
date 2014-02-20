@@ -35,7 +35,7 @@ typedef struct {
     cl_int grid_size_y;
     cl_int grid_size_z;
     cl_uint grid_cell_count;
-    cl_uint grid_cell_capacity;
+    cl_float3 min_point, max_point;
 } simulation_parameters;
 
 typedef struct {

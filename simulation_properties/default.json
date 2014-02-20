@@ -1,12 +1,12 @@
 {
-	"particles_count" : 64000,
+    "particles_count" : 1600000,
     "particle_mass" : 0.0025,
     "simulation_time" : 10,
     "target_fps" : 60,
     "simulation_scale" : 0.1,
-    "write_all_frames" : true,
-    "serialize" : true,
+    "write_all_frames" : false,
+    "serialize" : false,
     "constant_acceleration" : {
-    	"x" : 0, "y" : -9.8, "z" : 0
+        "x" : 0, "y" : -9.8, "z" : 0
     }
 };
