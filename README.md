@@ -19,18 +19,9 @@ Libclsph uses C++11 and OpenCL to run simulations. Results are exported using in
 
 
 Getting started
------------------------
-
-An exemple is provided and can be run this way :
-
-> ./example.out \<fluid_name\> \<simulation_properties_name\> \<scene_name\> \<frames_folder_prefix\>
-
-The OpenCL runtime is required to use the library. If no GPU is found it will default to using the CPU.
-
-More information
 ----------------
 
-Be sure to visit the [wiki](https://github.com/libclsph/libclsph/wiki) for more information.
+Be sure to visit the [wiki](https://github.com/libclsph/libclsph/wiki) for more information and detailed instructions on how to get started.
 
 Libraries used
 ----------------
