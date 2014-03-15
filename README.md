@@ -25,10 +25,8 @@ Be sure to visit the [wiki](https://github.com/libclsph/libclsph/wiki) for more 
 
 Libraries used
 ----------------
-[picojson](https://github.com/kazuho/picojson) is used to load simulation properties from files.
-
-[cereal](http://uscilab.github.io/cereal/) is used for all serialization needs.
-
-[partio](http://www.disneyanimation.com/technology/partio.html) is used to import/export particle data.
+* [picojson](https://github.com/kazuho/picojson) is used to load simulation properties from files.
+* [cereal](http://uscilab.github.io/cereal/) is used for all serialization needs.
+* [partio](http://www.disneyanimation.com/technology/partio.html) is used to import/export particle data.
 
 
