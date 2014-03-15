@@ -29,4 +29,6 @@ Libraries used
 
 [cereal](http://uscilab.github.io/cereal/) is used for all serialization needs.
 
+[partio](http://www.disneyanimation.com/technology/partio.html) is used to import/export particle data.
+
 
