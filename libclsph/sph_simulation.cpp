@@ -422,15 +422,22 @@ void sph_simulation::simulate(int frame_count) {
                 if(post_frame) post_frame(particles, parameters, false);
             }
 
-            profile_block::print_stats();
-            profile_block::reset_stats();
+            //If this is not the last step, print benchmark now, no post-frame operations will be done just yet
+            if( (float)j+1 < (1.f / parameters.simulation_scale) ){
+                profile_block::print_stats();
+                profile_block::reset_stats();
+            }
+
         }
 
         if(post_frame) {
-            profile("post-frame", profile_block::COUT_LOG) {
+             profile(profile_block::FILE_IO, profile_block::TALLY_STEP_TIME) {
                 post_frame(particles, parameters, true);
             }
         }
+
+        profile_block::print_stats();
+        profile_block::reset_stats();
     }
     delete[] particles;
 }
