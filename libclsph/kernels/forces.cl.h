@@ -14,7 +14,7 @@ float compute_density_with_grid(
 
 	float density = 0.f;
 
-	uint3 cell_coords = get_cell_coords_z_curve(others[current_particle_index].grid_index, params);
+	int3 cell_coords = get_cell_coords(others[current_particle_index].grid_index, params);
 
 	for (int z = cell_coords.z - 1; z <= cell_coords.z + 1; ++z) {
     	if(z < 0 || z >= params.grid_size_z) continue;
@@ -25,7 +25,7 @@ float compute_density_with_grid(
             for (int x = cell_coords.x - 1; x <= cell_coords.x + 1; ++x) {
     			if(x < 0 || x >= params.grid_size_x) continue;
 
-    			uint grid_index = get_grid_index_z_curve(x, y, z, params);
+    			int grid_index = get_grid_index(x, y, z, params);
     			uint2 indices = get_start_end_indices_for_cell(grid_index, grid_cell_particle_list, params);
 
     			for(size_t i = indices.x; i < indices.y; ++i) {
@@ -54,7 +54,7 @@ float3 compute_internal_forces_with_grid(
 	//also need the color field laplacian
 	float color_field_laplacian = 0.f;
 
-	uint3 cell_coords = get_cell_coords_z_curve(others[current_particle_index].grid_index, params);
+	int3 cell_coords = get_cell_coords(others[current_particle_index].grid_index, params);
 
 	for (int z = cell_coords.z - 1; z <= cell_coords.z + 1; ++z) {
     	if(z < 0 || z >= params.grid_size_z) continue;
@@ -63,7 +63,7 @@ float3 compute_internal_forces_with_grid(
             for (int x = cell_coords.x - 1; x <= cell_coords.x + 1; ++x) {
     			if(x < 0 || x >= params.grid_size_x) continue;
 
-    			uint grid_index = get_grid_index_z_curve(x, y, z, params);
+    			int grid_index = get_grid_index(x, y, z, params);
     			uint2 indices = get_start_end_indices_for_cell(grid_index, grid_cell_particle_list, params);
 
     			for(size_t i = indices.x; i < indices.y; ++i) {
