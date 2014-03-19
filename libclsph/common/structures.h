@@ -41,7 +41,7 @@ typedef struct {
 typedef struct {
     cl_float3 position, velocity, intermediate_velocity, constant_acceleration;
     cl_float density, pressure;
-    cl_int grid_index;
+    cl_uint grid_index;
 } particle;
 
 typedef struct {
