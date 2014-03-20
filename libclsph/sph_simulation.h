@@ -24,6 +24,7 @@ public:
 
 	bool write_intermediate_frames;
     bool serialize;
+	float initial_volume;
 
 private:
     void init_particles(particle* buffer,const simulation_parameters&);

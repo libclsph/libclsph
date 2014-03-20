@@ -14,7 +14,7 @@
 
 typedef struct {
     cl_uint particles_count;
-    cl_float initial_volume;
+    cl_float max_velocity;
     cl_float fluid_density;
     cl_float total_mass;
     cl_float particle_mass;

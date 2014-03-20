@@ -57,6 +57,10 @@ void kernel step_2(
         input_data[current_particle_index].intermediate_velocity +
         acceleration * params.time_delta * params.simulation_scale;
 
+    if(length(next) > params.max_velocity) {
+        next = normalize(next) * params.max_velocity;
+    }
+
     float3 position =
         input_data[current_particle_index].position +
         next * (params.time_delta * params.simulation_scale);

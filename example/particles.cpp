@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
         "Particle count:            " << simulation.parameters.particles_count << std::endl <<
         "Particle mass:             " << simulation.parameters.particle_mass << std::endl <<
         "Total mass:                " << simulation.parameters.total_mass << std::endl <<
-        "Initial volume:            " << simulation.parameters.initial_volume << std::endl <<
+        "Initial volume:            " << simulation.initial_volume << std::endl <<
         std::endl <<
         "Fluid density:             " << simulation.parameters.fluid_density << std::endl <<
         "Dynamic viscosity:         " << simulation.parameters.dynamic_viscosity << std::endl <<
