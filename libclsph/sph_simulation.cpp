@@ -17,10 +17,10 @@ cl::Device* running_device;
 void sph_simulation::init_particles(particle* buffer , const simulation_parameters &parameters ) {
 
     int particles_per_cube_side = ceil(cbrtf(parameters.particles_count));
-    float side_length = cbrtf(parameters.initial_volume);
+    float side_length = cbrtf(initial_volume);
     float spacing = side_length / (float)particles_per_cube_side;
 
-    std::cout << "volume: " << parameters.initial_volume <<
+    std::cout << "volume: " << initial_volume <<
     " side_length: " << side_length << " spacing: " << spacing << std::endl;
 
     //Last simualtion serialized its last frame
@@ -491,11 +491,13 @@ void sph_simulation::load_settings(std::string fluid_file_name, std::string para
     }
 
     parameters.total_mass = parameters.particles_count * parameters.particle_mass;
-    parameters.initial_volume = parameters.total_mass / parameters.fluid_density;
+    initial_volume = parameters.total_mass / parameters.fluid_density;
     parameters.h = cbrtf(
         3.f * 
         (particles_inside_influence_radius * 
-            (parameters.initial_volume / parameters.particles_count)) / 
+            (initial_volume / parameters.particles_count)) / 
         (4.f * M_PI));
     parameters.time_delta = 1.f / parameters.target_fps;
+
+    parameters.max_velocity = 0.4f * parameters.h / parameters.time_delta;
 }
