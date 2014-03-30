@@ -10,6 +10,12 @@
 #include "sph_simulation.h"
 #include "collision_volumes_loader.h"
 
+#define SORT_THREAD_COUNT 1024
+#define BUCKET_COUNT 256
+#define RADIX_WIDTH 8
+
+#define CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE_AMD 64
+
 const std::string BUFFER_KERNEL_FILE_NAME = "kernels/sph.cl";
 
 cl::Device* running_device;
@@ -60,10 +66,6 @@ void sph_simulation::init_particles(particle* buffer , const simulation_paramete
     }
 
 }
-
-#define SORT_THREAD_COUNT 1024
-#define BUCKET_COUNT 256
-#define RADIX_WIDTH 8
 
 void sph_simulation::sort_particles(
     particle* particles,
@@ -477,6 +479,12 @@ void sph_simulation::load_settings(std::string fluid_file_name, std::string para
         sim_stream >> sim_params;
 
         parameters.particles_count = (unsigned int)(sim_params.get<picojson::object>()["particles_count"].get<double>());
+
+        if( parameters.particles_count%CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE_AMD != 0 ){
+            std::cout << std::endl << "\033[1;31m You should choose a number of particles that is divisble by the preferred work group size.\033[0m";
+            std::cout << std::endl << "\033[1;31m Performances will be sub-optimal.\033[0m" << std::endl;
+        }
+
         parameters.particle_mass = (float)(sim_params.get<picojson::object>()["particle_mass"].get<double>());
         parameters.simulation_time = (float)(sim_params.get<picojson::object>()["simulation_time"].get<double>());
         parameters.target_fps = (float)(sim_params.get<picojson::object>()["target_fps"].get<double>());
