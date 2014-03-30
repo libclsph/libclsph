@@ -5,6 +5,10 @@
 
 #include "../../util/houdini_geo/HoudiniFileDumpHelper.h"
 
+#ifdef USE_PARTIO
+#include "../../util/partio/PartioFunctions.h"
+#endif
+
 #define OUTPUT_FILE_NAME "frames/frame"
 
 //Taken from http://www.cplusplus.com/forum/general/15952/
@@ -24,6 +28,8 @@ int houdini_file_saver::writeFrameToFile(particle* particles, const simulation_p
 
     //TODO Find a way to use the same struct for the simulation and writing to file
     houdini_Particle *houdini_Particles = new houdini_Particle[parameters.particles_count];
+
+#ifndef USE_PARTIO
 
     std::stringstream ss;
     ss << frames_folder_prefix << OUTPUT_FILE_NAME << ZeroPadNumber(++frame_count) << ".geo";
@@ -69,6 +75,20 @@ int houdini_file_saver::writeFrameToFile(particle* particles, const simulation_p
     }
 
     delete[] houdini_Particles;
+
+#else
+
+    std::stringstream ss;
+    ss << frames_folder_prefix << OUTPUT_FILE_NAME << ZeroPadNumber(++frame_count) << ".bgeo";
+    std::string fileName = ss.str();
+
+    Partio::ParticlesDataMutable* data = makeData(particles,parameters);
+    Partio::write(fileName.c_str(),*data);
+    data->release();
+
+#endif
+
+
 
     return 0;
 }
