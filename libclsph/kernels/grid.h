@@ -48,7 +48,7 @@ void kernel locate_in_grid(
     simulation_parameters params,
     collision_volumes volumes){
 
-    size_t current_particle_index = get_global_id(0);
+    const size_t current_particle_index = get_global_id(0);
     out_particles[current_particle_index] = particles[current_particle_index];
 
     float3 position_in_grid = {0.f,0.f,0.f};

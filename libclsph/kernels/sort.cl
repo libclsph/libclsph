@@ -47,7 +47,7 @@ void kernel sort(
 	int pass_number,
 	int radix_width) {
 	
-	size_t work_item_id = get_global_id(0);
+    const size_t work_item_id = get_global_id(0);
 	uint2 indices = get_start_and_end(params.particles_count, thread_count, work_item_id);
 
 	for(size_t i = indices.x; i <= indices.y; ++i) {

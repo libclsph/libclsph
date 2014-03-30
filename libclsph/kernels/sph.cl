@@ -13,10 +13,10 @@ void kernel step_1(
     global const unsigned int* cell_table) {
 
     /* we'll get the same amount of global_ids as there are particles */
-    size_t current_particle_index = get_global_id(0);
-    size_t group_index = get_group_id(0);
-    size_t index_in_group = get_local_id(0);
-    size_t group_size = get_local_size(0);
+    const size_t current_particle_index = get_global_id(0);
+    const size_t group_index = get_group_id(0);
+    const size_t index_in_group = get_local_id(0);
+    const size_t group_size = get_local_size(0);
 
     /* First let's copy the data we'll use to local memory */
     event_t e = async_work_group_copy ((__local char*)local_data, (__global const char*)input_data + (group_index*group_size*(sizeof(particle)/sizeof(char))), group_size*(sizeof(particle)/sizeof(char)) , 0);
@@ -24,15 +24,13 @@ void kernel step_1(
     
     particle current_particle = local_data[index_in_group];
     
+    current_particle.density = compute_density_with_grid(current_particle_index, input_data, params, cell_table);
+
     output_data[current_particle_index] = current_particle;
-
-    float density = compute_density_with_grid(current_particle_index, input_data, params, cell_table);
-
-    output_data[current_particle_index].density = density;
 
     //Tait equation more suitable to liquids than state equation
     output_data[current_particle_index].pressure =
-        params.K * (pown(density / params.fluid_density, 7) - 1.f);
+        params.K * (pown(current_particle.density / params.fluid_density, 7) - 1.f);
 }
 
 void kernel step_2(
@@ -42,7 +40,7 @@ void kernel step_2(
     collision_volumes volumes, 
     global const unsigned int* cell_table) {
 
-    size_t current_particle_index = get_global_id(0);
+    const size_t current_particle_index = get_global_id(0);
 
     output_data[current_particle_index] = input_data[current_particle_index];
 
