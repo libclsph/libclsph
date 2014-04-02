@@ -3,13 +3,6 @@
 
 #include "common.cl"
 
-//int3 get_cell_coords(int index, simulation_parameters params);
-//int get_grid_index(int x, int y, int z, simulation_parameters params);
-
-uint uninterleave(uint value);
-uint3 get_cell_coords_z_curve(uint index);
-uint get_grid_index_z_curve(uint in_x, uint in_y, uint in_z);
-
 uint2 get_start_end_indices_for_cell(uint cell_index, global const unsigned int* cell_table, simulation_parameters params);
 
 /**
