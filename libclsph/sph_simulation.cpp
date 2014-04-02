@@ -20,6 +20,13 @@ const std::string BUFFER_KERNEL_FILE_NAME = "kernels/sph.cl";
 
 cl::Device* running_device;
 
+/**
+ * @brief Restores the state of the last simulation or places the particles in the shape of a cube if no state is found.
+ *
+ * @param[out] buffer        Points to the particles buffer to be filled
+ * @param[in] parameters    Contains the simulation parameters
+ *
+ */
 void sph_simulation::init_particles(particle* buffer , const simulation_parameters &parameters ) {
 
     int particles_per_cube_side = ceil(cbrtf(parameters.particles_count));
@@ -190,7 +197,6 @@ void sph_simulation::simulate_single_frame(
     //Start groups size at their maximum, make them smaller if necessary
     //Optimally parameters.particles_count should be devisible by CL_DEVICE_MAX_WORK_GROUP_SIZE
     //Refer to CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE
-    //unsigned int work_group_size_multiple = kernel_locate_in_grid.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(*running_device);
 
     unsigned int size_of_groups = running_device->getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>();
     while(parameters.particles_count%size_of_groups!=0){
