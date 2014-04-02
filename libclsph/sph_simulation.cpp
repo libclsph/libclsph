@@ -20,6 +20,21 @@ const std::string BUFFER_KERNEL_FILE_NAME = "kernels/sph.cl";
 
 cl::Device* running_device;
 
+void set_kernel_args_internal(int index, cl::Kernel& kernel) {
+    return;
+}
+
+template<typename T1, typename... TArgs>
+void set_kernel_args_internal(int index, cl::Kernel& kernel, T1 a, TArgs... args) {
+    check_cl_error(kernel.setArg(index, a));
+    set_kernel_args_internal(index + 1, kernel, args...);
+}
+
+template<typename... TArgs>
+void set_kernel_args(cl::Kernel& kernel, TArgs... args) {
+    set_kernel_args_internal(0, kernel, args...);
+}
+
 /**
  * @brief Restores the state of the last simulation or places the particles in the shape of a cube if no state is found.
  *
@@ -105,12 +120,8 @@ void sph_simulation::sort_particles(
                 queue.finish();
         }
 
-        check_cl_error(kernel_sort_count.setArg(0, input_buffer));
-        check_cl_error(kernel_sort_count.setArg(1, count_buffer));
-        check_cl_error(kernel_sort_count.setArg(2, parameters));
-        check_cl_error(kernel_sort_count.setArg(3, SORT_THREAD_COUNT));
-        check_cl_error(kernel_sort_count.setArg(4, pass_number));
-        check_cl_error(kernel_sort_count.setArg(5, RADIX_WIDTH));
+        set_kernel_args(kernel_sort_count, 
+            input_buffer, count_buffer, parameters, SORT_THREAD_COUNT, pass_number, RADIX_WIDTH);
 
         profile(profile_block::SORT, profile_block::TALLY_STEP_TIME) {
         check_cl_error(
@@ -146,13 +157,8 @@ void sph_simulation::sort_particles(
                 queue.finish();
         }
 
-        check_cl_error(kernel_sort.setArg(0, input_buffer));
-        check_cl_error(kernel_sort.setArg(1, output_buffer));
-        check_cl_error(kernel_sort.setArg(2, count_buffer));
-        check_cl_error(kernel_sort.setArg(3, parameters));
-        check_cl_error(kernel_sort.setArg(4, SORT_THREAD_COUNT));
-        check_cl_error(kernel_sort.setArg(5, pass_number));
-        check_cl_error(kernel_sort.setArg(6, RADIX_WIDTH));
+        set_kernel_args(kernel_sort, 
+            input_buffer, output_buffer, count_buffer, parameters, SORT_THREAD_COUNT, pass_number, RADIX_WIDTH);
 
         profile(profile_block::SORT, profile_block::TALLY_STEP_TIME) {
             check_cl_error(
@@ -254,10 +260,7 @@ void sph_simulation::simulate_single_frame(
     // Locate each particle in the grid and build the grid count table
     //----------------------------------------------------------------
 
-    check_cl_error(kernel_locate_in_grid.setArg(0, input_buffer));
-    check_cl_error(kernel_locate_in_grid.setArg(1, output_buffer));
-    check_cl_error(kernel_locate_in_grid.setArg(2, parameters));
-    check_cl_error(kernel_locate_in_grid.setArg(3, volumes));
+    set_kernel_args(kernel_locate_in_grid, input_buffer, output_buffer, parameters, volumes);
 
     check_cl_error(
         queue.enqueueNDRangeKernel(
@@ -302,9 +305,9 @@ void sph_simulation::simulate_single_frame(
     //-----------------------------------------------------
     // step_1
     //-----------------------------------------------------
-            
+
     check_cl_error(kernel_step_1.setArg(0, input_buffer));
-    check_cl_error(kernel_step_1.setArg(1, size_of_groups * sizeof(particle) , NULL)); //Declare local memory in arguments
+    check_cl_error(kernel_step_1.setArg(1, size_of_groups * sizeof(particle), NULL)); //Declare local memory in arguments
     check_cl_error(kernel_step_1.setArg(2, output_buffer));
     check_cl_error(kernel_step_1.setArg(3, parameters));
     check_cl_error(kernel_step_1.setArg(4, cell_table_buffer));
@@ -339,11 +342,7 @@ void sph_simulation::simulate_single_frame(
             queue.finish();
     }
 
-    check_cl_error(kernel_step_2.setArg(0, input_buffer));
-    check_cl_error(kernel_step_2.setArg(1, output_buffer));
-    check_cl_error(kernel_step_2.setArg(2, parameters));
-    check_cl_error(kernel_step_2.setArg(3, volumes));
-    check_cl_error(kernel_step_2.setArg(4, cell_table_buffer));
+    set_kernel_args(kernel_step_2, input_buffer, output_buffer, parameters, volumes, cell_table_buffer);
 
     profile(profile_block::STEP_2, profile_block::TALLY_STEP_TIME) {
         check_cl_error(
@@ -352,7 +351,6 @@ void sph_simulation::simulate_single_frame(
                 cl::NDRange(parameters.particles_count), cl::NDRange(size_of_groups)));
         queue.finish();
     }
-
 
     profile(profile_block::MEMORY_TRANSFERS, profile_block::TALLY_STEP_TIME) {
         check_cl_error(

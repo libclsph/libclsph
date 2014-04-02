@@ -1,7 +1,7 @@
 #ifndef _GRID_H_
 #define _GRID_H_
 
-#include "common.cl.h"
+#include "common.cl"
 
 int3 get_cell_coords(int index, simulation_parameters params);
 int get_grid_index(int x, int y, int z, simulation_parameters params);

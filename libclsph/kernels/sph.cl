@@ -1,8 +1,8 @@
-#include "common.cl.h"
-#include "smoothing.cl.inl"
-#include "forces.cl.h"
-#include "collisions.cl.h"
-#include "grid.h"
+#include "common.cl"
+#include "smoothing.cl"
+#include "forces.cl"
+#include "collisions.cl"
+#include "grid.cl"
 #include "sort.cl"
 
 void kernel step_1(

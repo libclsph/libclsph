@@ -1,5 +1,5 @@
-#include "common.cl.h"
-#include "grid.h"
+#include "common.cl"
+#include "grid.cl"
 
 float compute_density(size_t current_particle_index, global const particle* others, const simulation_parameters params);
 float3 compute_internal_forces(size_t current_particle_index, global const particle* others, const simulation_parameters params);

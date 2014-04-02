@@ -1,4 +1,4 @@
-#include "common.cl.h"
+#include "common.cl"
 
 typedef struct {
 	float3 position, next_velocity;
