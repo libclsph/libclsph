@@ -26,10 +26,10 @@ std::string ZeroPadNumber(int num)
 
 int houdini_file_saver::writeFrameToFile(particle* particles, const simulation_parameters& parameters) {
 
+#ifndef USE_PARTIO
+
     //TODO Find a way to use the same struct for the simulation and writing to file
     houdini_Particle *houdini_Particles = new houdini_Particle[parameters.particles_count];
-
-#ifndef USE_PARTIO
 
     std::stringstream ss;
     ss << frames_folder_prefix << OUTPUT_FILE_NAME << ZeroPadNumber(++frame_count) << ".geo";
