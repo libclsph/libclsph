@@ -20,6 +20,15 @@ const std::string BUFFER_KERNEL_FILE_NAME = "kernels/sph.cl";
 
 cl::Device* running_device;
 
+cl::Kernel make_kernel(cl::Program& p, const char* name) {
+
+    cl_int cl_error; 
+    cl::Kernel k = cl::Kernel(p, name, &cl_error);
+    check_cl_error(cl_error);
+
+    return k;
+}
+
 void set_kernel_args_internal(int index, cl::Kernel& kernel) {
     return;
 }
@@ -383,20 +392,11 @@ void sph_simulation::simulate(int frame_count) {
     cl::Program program;
     check_cl_error(make_program(&program, context, device_array, source, true, "-I ./kernels/ -I ./common/"));
 
-    cl::Kernel kernel_step_1 = cl::Kernel(program, "step_1", &cl_error);
-    check_cl_error(cl_error);
-
-    cl::Kernel kernel_step_2 = cl::Kernel(program, "step_2", &cl_error);
-    check_cl_error(cl_error);
-
-    cl::Kernel kernel_locate_in_grid = cl::Kernel(program, "locate_in_grid", &cl_error);
-    check_cl_error(cl_error);
-
-    cl::Kernel kernel_sort_count = cl::Kernel(program, "sort_count", &cl_error);
-    check_cl_error(cl_error);
-
-    cl::Kernel kernel_sort = cl::Kernel(program, "sort", &cl_error);
-    check_cl_error(cl_error);
+    cl::Kernel kernel_step_1 = make_kernel(program, "step_1");
+    cl::Kernel kernel_step_2 = make_kernel(program, "step_2");
+    cl::Kernel kernel_locate_in_grid = make_kernel(program, "locate_in_grid");
+    cl::Kernel kernel_sort_count = make_kernel(program, "sort_count");
+    cl::Kernel kernel_sort = make_kernel(program, "sort");
 
     cl::Buffer input_buffer(context,  CL_MEM_READ_WRITE |  CL_MEM_ALLOC_HOST_PTR ,  sizeof(particle) * parameters.particles_count);
     cl::Buffer output_buffer(context, CL_MEM_READ_WRITE |  CL_MEM_ALLOC_HOST_PTR ,  sizeof(particle) * parameters.particles_count);
@@ -456,6 +456,7 @@ void sph_simulation::load_scene(std::string scene_file_name) {
 
     volumes = loader.load_standard_json(scene_stream);
 }
+
 void sph_simulation::load_settings(std::string fluid_file_name, std::string parameters_file_name) {
     int particles_inside_influence_radius = 0;
 
