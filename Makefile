@@ -1,4 +1,7 @@
-INCLUDE_PATH = -I/usr/local/include -I/opt/AMDAPP/include
+#uncomment this line if a local cl.hpp is required
+#LOCAL_CL_HPP=-DUSE_LOCAL_CL_HPP
+
+INCLUDE_PATH = -I/usr/local/include -I/opt/AMDAPP/include -I/usr/local/NVIDIA_OpenCL_SDK/src/NVIDIA\ GPU\ Computing\ SDK/OpenCL/common/inc/
 
 LIB_PARTIO_A_PATH=
 
@@ -15,8 +18,8 @@ LIBS = -lOpenCL
 MAC_LIB_PATH = -L/usr/local/lib
 MAC_LIBS = -framework OpenCL
 
-FLAGS = --std=c++11 -g -Wfatal-errors -Wall -Wno-deprecated-declarations
-MAC_FLAGS = --std=c++11 -g -Wfatal-errors -Wall -Wextra -pedantic -Wno-deprecated-declarations
+FLAGS = --std=c++11 -g -Wfatal-errors -Wall -Wno-deprecated-declarations $(LOCAL_CL_HPP)
+MAC_FLAGS = --std=c++11 -g -Wfatal-errors -Wall -Wextra -pedantic -Wno-deprecated-declarations $(LOCAL_CL_HPP)
 
 OUT_DIR = bin/
 

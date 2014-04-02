@@ -7,7 +7,7 @@
 #include <fstream>
 #include <sstream>
 
-#ifdef __APPLE__
+#ifdef USE_LOCAL_CL_HPP
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-pedantic"
 #pragma GCC diagnostic ignored "-Wall"
