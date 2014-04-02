@@ -29,7 +29,7 @@ cl::Kernel make_kernel(cl::Program& p, const char* name) {
     return k;
 }
 
-void set_kernel_args_internal(int index, cl::Kernel& kernel) {
+void set_kernel_args_internal(int, cl::Kernel&) {
     return;
 }
 
@@ -75,7 +75,7 @@ void sph_simulation::init_particles(particle* buffer , const simulation_paramete
     //No serialized particle array was found
     //Initialize the particles in their default position
     else{
-        for(int i = 0; i < parameters.particles_count; ++i) {
+        for(unsigned int i = 0; i < parameters.particles_count; ++i) {
             //Arrange the particles in the form of a cube
             buffer[i].position.s[0] = (float)(i % particles_per_cube_side) * spacing - side_length / 2.f;
             buffer[i].position.s[1] = ((float)((i / particles_per_cube_side) % particles_per_cube_side) * spacing);
@@ -189,7 +189,7 @@ void sph_simulation::sort_particles(
     delete[] count_array;
 
     unsigned int current_index = 0;
-    for(int i = 0; i < parameters.grid_cell_count; ++i) {
+    for(unsigned int i = 0; i < parameters.grid_cell_count; ++i) {
         cell_table[i] = current_index;
         while(current_index != parameters.particles_count && particles[current_index].grid_index == i) {
             current_index++;

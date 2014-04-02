@@ -35,7 +35,7 @@ int houdini_file_saver::writeFrameToFile(particle* particles, const simulation_p
     ss << frames_folder_prefix << OUTPUT_FILE_NAME << ZeroPadNumber(++frame_count) << ".geo";
     std::string fileName = ss.str();
 
-    for(int i=0;i<parameters.particles_count;i++){
+    for(unsigned int i=0;i<parameters.particles_count;i++){
         houdini_Particles[i].px = particles[i].position.s[0];
         houdini_Particles[i].py = particles[i].position.s[1];
         houdini_Particles[i].pz = particles[i].position.s[2];
