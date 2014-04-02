@@ -96,8 +96,6 @@ int respond(collision_response* response, collision c, simulation_parameters par
 			(params.time_delta * params.simulation_scale * length(response->next_velocity))) * 
 		dot(response->next_velocity, c.surface_normal) * c.surface_normal;
 
-	//response->next_velocity *= 0.75f;
-
 	return 1;
 }
 

@@ -6,6 +6,7 @@
 #define cl_uint unsigned int
 #define cl_int int
 #define cl_float3 float3
+#define cl_uint3 uint3
 #else
 #include "../../util/cl_boilerplate.h"
 #endif

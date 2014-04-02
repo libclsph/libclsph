@@ -9,6 +9,7 @@
 
 #include "sph_simulation.h"
 #include "collision_volumes_loader.h"
+#include "common/util.h"
 
 #define SORT_THREAD_COUNT 1024
 #define BUCKET_COUNT 256
@@ -256,10 +257,13 @@ void sph_simulation::simulate_single_frame(
     parameters.max_point.s[1] = max_y; 
     parameters.max_point.s[2] = max_z;
 
-    parameters.grid_size_x = (int)((max_x - min_x) / (parameters.h * 2) + 1);
-    parameters.grid_size_y = (int)((max_y - min_y) / (parameters.h * 2) + 1);
-    parameters.grid_size_z = (int)((max_z - min_z) / (parameters.h * 2) + 1);
-    parameters.grid_cell_count = parameters.grid_size_x * parameters.grid_size_y * parameters.grid_size_z;
+    parameters.grid_size_x = (uint)((max_x - min_x) / (parameters.h * 2)) + 1;
+    parameters.grid_size_y = (uint)((max_y - min_y) / (parameters.h * 2)) + 1;
+    parameters.grid_size_z = (uint)((max_z - min_z) / (parameters.h * 2)) + 1;
+    parameters.grid_cell_count = get_grid_index_z_curve(
+        parameters.grid_size_x, 
+        parameters.grid_size_y, 
+        parameters.grid_size_z);
 
     std::cout << "Grid size:" << parameters.grid_size_x << ":" << parameters.grid_size_y << ":" << parameters.grid_size_z << std::endl;
 

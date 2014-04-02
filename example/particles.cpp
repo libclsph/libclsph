@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
     }
 
     int i = 0;
-    simulation.post_frame = [&] (particle* particles, const simulation_parameters& params, bool full_frame) {
+    simulation.pre_frame = [&] (particle* particles, const simulation_parameters& params, bool full_frame) {
         if(simulation.write_intermediate_frames != full_frame) {
             saver.writeFrameToFile(particles, params);
         }
