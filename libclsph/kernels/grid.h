@@ -7,6 +7,15 @@ int3 get_cell_coords(int index, simulation_parameters params);
 int get_grid_index(int x, int y, int z, simulation_parameters params);
 uint2 get_start_end_indices_for_cell(int cell_index, global const unsigned int* cell_table, simulation_parameters params);
 
+/**
+ * @brief      Find the cartesian coordinates of a grid cell from its index in the flattened array
+ *
+ * @param[in]  index    The index of the grid cell in the flattened array
+ * @param[in]  params   The simulation parameters
+ *
+ * @return     The cartesian coordinates of the grid cell_index
+ *
+ */
 int3 get_cell_coords(int index, simulation_parameters params) {
     int3 coords = {
         index % params.grid_size_x,
@@ -16,7 +25,17 @@ int3 get_cell_coords(int index, simulation_parameters params) {
     return coords;
 }
 
-
+/**
+ * @brief      Finds the index of a grid cell in the flattened cell table from its cartesian coordinates
+ *
+ * @param[in]  x        The x position of the cell in the cartesian grid.
+ * @param[in]  y        The y position of the cell in the cartesian grid.
+ * @param[in]  z        The z position of the cell in the cartesian grid.
+ * @param[in]  params   The simulation parameters
+ *
+ * @return     The index of the grid cell
+ *
+ */
 int get_grid_index(int x, int y, int z, simulation_parameters params) {
     return x + params.grid_size_x * (y + params.grid_size_y * z);
 }
@@ -44,9 +63,10 @@ uint2 get_start_end_indices_for_cell(int cell_index, global const unsigned int* 
 /**
  * @brief Updates each particle with its position in the grid and fills an array with the number of particles contained in each grid cell
  *
- * @param[out] particles        Contains all the particle data
+ * @param[in]  particles        Contains all the particle data
+ * @param[out] out_particles    Will contain the particle data with the added information
  * @param[in]  params           Contains the simulation parameters
- * @param[in]  particles_count  Contains all the volumes with which the fluid can interact. Also contains the simulation boundaries
+ * @param[in]  volumes          Contains all the volumes with which the fluid can interact. Also contains the simulation boundaries
  *
  */
 void kernel locate_in_grid(
