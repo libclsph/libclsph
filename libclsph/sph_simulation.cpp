@@ -257,9 +257,9 @@ void sph_simulation::simulate_single_frame(
     parameters.max_point.s[1] = max_y; 
     parameters.max_point.s[2] = max_z;
 
-    parameters.grid_size_x = (uint)((max_x - min_x) / (parameters.h * 2)) + 1;
-    parameters.grid_size_y = (uint)((max_y - min_y) / (parameters.h * 2)) + 1;
-    parameters.grid_size_z = (uint)((max_z - min_z) / (parameters.h * 2)) + 1;
+    parameters.grid_size_x = (cl_uint)((max_x - min_x) / (parameters.h * 2)) + 1;
+    parameters.grid_size_y = (cl_uint)((max_y - min_y) / (parameters.h * 2)) + 1;
+    parameters.grid_size_z = (cl_uint)((max_z - min_z) / (parameters.h * 2)) + 1;
     parameters.grid_cell_count = get_grid_index_z_curve(
         parameters.grid_size_x, 
         parameters.grid_size_y, 
