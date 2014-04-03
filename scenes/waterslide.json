@@ -1,0 +1,38 @@
+{
+	"bounding_box" : 
+	{
+    	"center" : { "x" : 0, "y" : 0, "z" : 0 },
+    	"axis_extends" : { "x" : 20, "y" : 20, "z" : 20 },
+    	"container" : true
+	},
+	"boxes": 
+	[
+		{
+    		"center" : { "x" : 2.47879, "y" : -4.51437, "z" : 0 },
+    		"axis_extends" : { "x" : 9.70487, "y" : 0.696334, "z" : 12.836 },
+    		"container" : false
+		}
+	],
+	"spheres": 
+	[
+		{
+			"center" : { "x" : 0.881001, "y" : -0.637053, "z" : 0 },
+			"radius" : 0.5,
+			"container" : false
+		},
+		{
+			"center" : { "x" : 5.33664, "y" : 1.46463, "z" : 0 },
+			"radius" : 9.2523,
+			"container" : true
+		}
+	],
+	"capsules": 
+	[
+		{
+			"p0" : { "x" : -4.5, "y" : 3, "z" : 0 },
+			"p1" : { "x" : 15, "y" : -8, "z" : 0 },
+			"radius" : 3.5,
+			"container" : true
+		}
+	]
+};
