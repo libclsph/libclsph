@@ -20,18 +20,21 @@ collision_volumes collision_volumes_loader::load_standard_json(std::ifstream& js
 	const picojson::array& spheres = volumes_object["spheres"].get<picojson::array>();
     for (picojson::array::const_iterator i = spheres.begin(); i != spheres.end(); ++i) {
     	volumes.spheres[index] = this->read_sphere_json((*i).get<picojson::object>());
+        ++index;
     }
 
     index = 0;
      picojson::array& boxes = volumes_object["boxes"].get<picojson::array>();
     for (picojson::array::const_iterator i = boxes.begin(); i != boxes.end(); ++i) {
         volumes.boxes[index] = this->read_box_json((*i).get<picojson::object>());
+        ++index;
     }
 
     index = 0;
     const picojson::array& capsules = volumes_object["capsules"].get<picojson::array>();
     for (picojson::array::const_iterator i = capsules.begin(); i != capsules.end(); ++i) {
         volumes.capsules[index] = this->read_capsule_json((*i).get<picojson::object>());
+        ++index;
     }
 
 	return volumes;
