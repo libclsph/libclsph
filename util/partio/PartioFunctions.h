@@ -10,13 +10,15 @@ inline Partio::ParticlesDataMutable* makeData(particle* buffer,simulation_parame
     Partio::ParticleAttribute colorAttr=data.addAttribute("color",Partio::VECTOR,3);
     Partio::ParticleAttribute idAttr=data.addAttribute("id",Partio::INT,1);
     Partio::ParticleAttribute massAttr = data.addAttribute("mass", Partio::FLOAT, 1);
+    Partio::ParticleAttribute pscaleAttr = data.addAttribute("pscale", Partio::FLOAT, 1); //Support radius
  
-    for(int i=0; i<parameters.particles_count; ++i) {
- 
+    for(unsigned int i=0; i<parameters.particles_count; ++i) {
+
         particle temp_particle = buffer[i];
  
         Partio::ParticleIndex index=data.addParticle();
  
+        float* pscale=data.dataWrite<float>(pscaleAttr,index);
         float* pos=data.dataWrite<float>(positionAttr,index);
         float* vel=data.dataWrite<float>(velocityAttr,index);
         float* color=data.dataWrite<float>(colorAttr,index);
@@ -25,6 +27,8 @@ inline Partio::ParticlesDataMutable* makeData(particle* buffer,simulation_parame
  
         int* id=data.dataWrite<int>(idAttr,index);
  
+        *pscale = parameters.h;
+
         pos[0]= temp_particle.position.s[0];
         pos[1]= temp_particle.position.s[1];
         pos[2]= temp_particle.position.s[2];
