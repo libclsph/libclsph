@@ -95,6 +95,7 @@ class ConcreteDataProvider : public HoudiniFileDumpParticles::ParticlesDataProvi
             posX = _houdini_Particles[ptID].px;
             posY = _houdini_Particles[ptID].py;
             posZ = _houdini_Particles[ptID].pz;
+            posW = 0; //Not set for now
         }
 
         //-------------------------------------------------------------
