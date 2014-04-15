@@ -70,7 +70,12 @@ int main(int argc, char** argv) {
         std::endl <<
         "Saving to folder:          " << saver.frames_folder_prefix + "frames/" << std::endl;
 
-    simulation.load_scene(std::string("scenes/") + argv[3] + std::string(".json"));
+    //simulation.load_scene(std::string("scenes/") + argv[3] + std::string(".json"));
+
+    if(!simulation.current_scene.load(argv[3])) {
+        std::cerr << "Unable to load scene: " << argv[3] << std::endl;
+        return -1;
+    }
 
     //If the serialization data is not the right size, delete it
     //This probably means the last simulation ran with a different number of particles or the serialization was interrupted

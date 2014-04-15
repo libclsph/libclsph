@@ -8,7 +8,6 @@
 #include "../util/cereal/archives/binary.hpp"
 
 #include "sph_simulation.h"
-#include "collision_volumes_loader.h"
 #include "common/util.h"
 
 #define SORT_THREAD_COUNT 1024
@@ -347,15 +346,43 @@ void sph_simulation::simulate_single_frame(
     // step_2
     //-----------------------------------------------------
 
+
+    cl::Buffer face_normals_buffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, sizeof(float) * current_scene.face_normals.size());
+    cl::Buffer vertices_buffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, sizeof(float) * current_scene.vertices.size());
+    cl::Buffer indices_buffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, sizeof(unsigned int) * current_scene.indices.size());
+
     profile(profile_block::MEMORY_TRANSFERS, profile_block::TALLY_STEP_TIME) {
         check_cl_error(
             queue.enqueueWriteBuffer(
                 input_buffer, CL_TRUE, 0,
                 sizeof(particle) * parameters.particles_count, out_particles));
+
+            check_cl_error(
+                queue.enqueueWriteBuffer(
+                    face_normals_buffer, CL_TRUE, 0,
+                    sizeof(float) * current_scene.face_normals.size(), current_scene.face_normals.data()));
+
+            check_cl_error(
+                queue.enqueueWriteBuffer(
+                    vertices_buffer, CL_TRUE, 0,
+                    sizeof(float) * current_scene.vertices.size(), current_scene.vertices.data()));
+
+            check_cl_error(
+                queue.enqueueWriteBuffer(
+                    indices_buffer, CL_TRUE, 0,
+                    sizeof(unsigned int) * current_scene.indices.size(), current_scene.indices.data()));
+
             queue.finish();
     }
 
-    set_kernel_args(kernel_step_2, input_buffer, output_buffer, parameters, volumes, cell_table_buffer);
+    check_cl_error(kernel_step_2.setArg(0, input_buffer));
+    check_cl_error(kernel_step_2.setArg(1, output_buffer));
+    check_cl_error(kernel_step_2.setArg(2, parameters));
+    check_cl_error(kernel_step_2.setArg(3, cell_table_buffer));
+    check_cl_error(kernel_step_2.setArg(4, face_normals_buffer));
+    check_cl_error(kernel_step_2.setArg(5, vertices_buffer));
+    check_cl_error(kernel_step_2.setArg(6, indices_buffer));
+    check_cl_error(kernel_step_2.setArg(7, current_scene.face_count));
 
     profile(profile_block::STEP_2, profile_block::TALLY_STEP_TIME) {
         check_cl_error(
@@ -452,15 +479,6 @@ void sph_simulation::simulate(int frame_count) {
     delete[] particles;
 }
 
-void sph_simulation::load_scene(std::string scene_file_name) {
-    picojson::value scene;
-    std::ifstream scene_stream(scene_file_name);
-
-    collision_volumes_loader loader;
-
-    volumes = loader.load_standard_json(scene_stream);
-}
-
 void sph_simulation::load_settings(std::string fluid_file_name, std::string parameters_file_name) {
     int particles_inside_influence_radius = 0;
 
@@ -516,5 +534,5 @@ void sph_simulation::load_settings(std::string fluid_file_name, std::string para
         (4.f * M_PI));
     parameters.time_delta = 1.f / parameters.target_fps;
 
-    parameters.max_velocity = 0.4f * parameters.h / parameters.time_delta;
+    parameters.max_velocity = 0.8f * parameters.h / parameters.time_delta;
 }

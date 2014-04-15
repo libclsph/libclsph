@@ -4,6 +4,7 @@
 #include "collisions.cl"
 #include "grid.cl"
 #include "sort.cl"
+#include "advection.cl"
 
 void kernel step_1(
     global const particle* input_data,
@@ -37,8 +38,11 @@ void kernel step_2(
     global const particle* input_data,
     global particle* output_data,
     simulation_parameters params,
-    collision_volumes volumes, 
-    global const unsigned int* cell_table) {
+    global const unsigned int* cell_table,
+    global const float* face_normals,
+    global const float* vertices,
+    global const uint* indices,
+    uint face_count) {
 
     const size_t current_particle_index = get_global_id(0);
 
@@ -50,20 +54,38 @@ void kernel step_2(
 
     acceleration += input_data[current_particle_index].constant_acceleration;
 
-    //Leapfrog
-    float3 next =
-        input_data[current_particle_index].intermediate_velocity +
-        acceleration * params.time_delta * params.simulation_scale;
+    float time_to_go = params.time_delta * params.simulation_scale;
+    collision_response response;
+    float3 current_position = input_data[current_particle_index].position;
+    float3 current_velocity = input_data[current_particle_index].intermediate_velocity;
 
-    if(length(next) > params.max_velocity) {
-        next = normalize(next) * params.max_velocity;
-    }
+    do {
+        advection_result res = advect(
+            current_position, 
+            current_velocity,
+            acceleration,
+            params.max_velocity, time_to_go);
 
-    float3 position =
-        input_data[current_particle_index].position +
-        next * (params.time_delta * params.simulation_scale);
+        response = handle_collisions(
+            res.old_position, 
+            res.new_position, 
+            res.next_velocity, 
+            params.restitution, time_to_go, 
+            face_normals,
+            vertices,
+            indices,
+            face_count);
 
-    collision_response response = handle_collisions(position, next, params, volumes);
+        current_position = response.position;
+        current_velocity = response.next_velocity;
+
+        time_to_go -= response.time_elapsed;
+
+        acceleration.x = 0.f;
+        acceleration.y = 0.f;
+        acceleration.z = 0.f;
+
+    } while(response.collision_happened);
 
     output_data[current_particle_index].velocity =
         (input_data[current_particle_index].intermediate_velocity + response.next_velocity) / 2.f;

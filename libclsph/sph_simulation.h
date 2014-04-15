@@ -3,6 +3,7 @@
 
 #include <functional>
 #include "common/structures.h"
+#include "scene.h"
 
 class sph_simulation {
 public:
@@ -19,12 +20,12 @@ public:
 	std::function<void(particle*, const simulation_parameters&, bool)> pre_frame;
 	std::function<void(particle*, const simulation_parameters&, bool)> post_frame;
 
-	void load_scene(std::string scene_file_name);
 	void load_settings(std::string fluid_file_name, std::string parameters_file_name);
 
 	bool write_intermediate_frames;
     bool serialize;
 	float initial_volume;
+	scene current_scene;
 
 private:
     void init_particles(particle* buffer,const simulation_parameters&);

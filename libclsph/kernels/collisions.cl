@@ -2,138 +2,135 @@
 
 typedef struct {
 	float3 position, next_velocity;
+	int collision_happened;
+	float time_elapsed;
 } collision_response;
 
 typedef struct {
 	float3 collision_point, surface_normal;
 	float penetration_depth;
+	int collision_happened;
 } collision;
 
-float sphere(float3 point, collision_sphere s);
-float capsule(float3 point, collision_capsule c);
-float box(float3 point, collision_box b);
+int detect_collision(
+	collision* c, 
+	float3 p0, float3 p1,
+	global const float* face_normals,
+	global const float* vertices,
+	global const uint* indices,
+	uint face_count) {
 
-collision interpret_sphere_collision(float3 position, float func, collision_sphere s);
-collision interpret_capsule_collision(float3 position, float func, collision_capsule c);
-collision interpret_box_collision(float3 position, float func, collision_box b);
+	c->collision_happened = 0;
 
-int respond(collision_response* response, collision c, simulation_parameters params);
-collision_response handle_collisions(float3 position, float3 next, simulation_parameters params, collision_volumes volumes);
+	for(uint i = 0; i < face_count; ++i) {
 
-float sphere(float3 point, collision_sphere s) {
-	return pown(length(point - s.center), 2) - pown(s.radius, 2);
+		float3 normal = {
+			face_normals[3 * i + 0],
+			face_normals[3 * i + 1],
+			face_normals[3 * i + 2],
+		};
+
+		if(dot(normal, p1 - p0) / (length(normal) * length(p1 - p0)) <= 0) {
+			normal = -normal;
+		}
+
+		float3 v0 = {
+			vertices[3 * indices[3 * i + 0] + 0],
+			vertices[3 * indices[3 * i + 0] + 1],
+			vertices[3 * indices[3 * i + 0] + 2],
+		};
+
+		float3 v1 = {
+			vertices[3 * indices[3 * i + 1] + 0],
+			vertices[3 * indices[3 * i + 1] + 1],
+			vertices[3 * indices[3 * i + 1] + 2],
+		};
+
+		float3 v2 = {
+			vertices[3 * indices[3 * i + 2] + 0],
+			vertices[3 * indices[3 * i + 2] + 1],
+			vertices[3 * indices[3 * i + 2] + 2],
+		};
+
+		float3 u = v1 - v0;
+		float3 v = v2 - v0;
+
+		float denom = dot(normal, p1 - p0);
+
+		if(denom == 0.f) {
+			continue;
+		}
+
+		float r = dot(normal, v0 - p0) / denom;
+
+		if(0 <= r && r <= 1) {
+
+			float3 intersect = p0 + r * (p1 - p0);
+			float3 w = intersect - v0;
+			float uv, wv, vv, wu, uu;
+
+			uv = dot(u, v);
+			wv = dot(w, v);
+			vv = dot(v, v);
+			wu = dot(w, u);
+			uu = dot(u, u);
+
+			float denom = uv * uv - uu * vv;
+			float s = (uv * wv - vv * wu) / denom;
+			float t = (uv * wu - uu * wv) / denom;
+
+			//Collision
+			if(s >= 0 && t >= 0 && s + t <= 1) {
+				if(c->collision_happened && length(p0 - intersect) > length(p0 - c->collision_point)) {
+					continue;
+				}
+				c->surface_normal = normal;
+				c->collision_point = intersect;
+				c->penetration_depth = length(p1 - intersect);
+				c->collision_happened = 1;
+			}
+		} 
+	}
+	return c->collision_happened;
 }
 
-float capsule(float3 point, collision_capsule c) {
-	float3 q = c.p0 + fmin(1.f, fmax(0.f, -dot(c.p0 - point, c.p1 - c.p0) / pown(length(c.p1 - c.p0), 2))) * (c.p1 - c.p0);
-	return length(q - point) - c.radius;
-}
-
-inline float max_c(float3 v) {
-	return fmax(v.x, fmax(v.y, v.z));
-}
-
-float box(float3 point, collision_box b) {
-	//TODO: allow orientations and project point into obb space (see kelager)
-	return max_c(fabs(point - b.center) - b.axis_extends);
-}
-
-collision interpret_sphere_collision(float3 position, float func, collision_sphere s) {
-	collision c;
-
-	c.collision_point = 
-		s.center + 
-		s.radius *
-		(position - s.center) /
-		length(position - s.center);
-
-	c.penetration_depth = length(s.center - position);
-	c.surface_normal = 
-		sign(func) * 
-		(s.center - position) / 
-		length(s.center - position);
-
-	return c;
-}
-
-collision interpret_capsule_collision(float3 position, float func, collision_capsule c) {
-	collision col;
-
-	//TODO: compute only once
-	float3 q = c.p0 + fmin(1.f, fmax(0.f, -dot(c.p0 - position, c.p1 - c.p0) / pown(length(c.p1 - c.p0), 2))) * (c.p1 - c.p0);
-
-	col.collision_point = 
-		q + c.radius * (position - q) / length(position - q);
-
-	col.penetration_depth = fabs(capsule(position, c));
-	col.surface_normal = sign(func) * (q - position) / length(q - position);
-
-	return col;
-}
-
-collision interpret_box_collision(float3 position, float func, collision_box b) {
-	collision c;
-
-	float3 local_collision_point = fmin(b.axis_extends, fmax(-b.axis_extends, position - b.center));
-	c.collision_point = b.center + local_collision_point;
-		
-	c.penetration_depth = length(c.collision_point - position);
-
-	float3 s = sign(local_collision_point - (position - b.center));
-
-	c.surface_normal = normalize(s);
-
-	return c;
-}
-
-int respond(collision_response* response, collision c, simulation_parameters params) {
-	response->position = c.collision_point;
+int respond(collision_response* response, collision c, float restitution, float time_elapsed) {
+	//hack to avoid points directly on the faces, the collision detection code should be 
+	response->position = c.collision_point - (c.surface_normal * 0.001);
 
 	response->next_velocity -= 
 		(1.f + 
-			params.restitution * 
+			restitution * 
 			c.penetration_depth / 
-			(params.time_delta * params.simulation_scale * length(response->next_velocity))) * 
+			(time_elapsed * length(response->next_velocity))) * 
 		dot(response->next_velocity, c.surface_normal) * c.surface_normal;
 
 	return 1;
 }
 
-collision_response handle_collisions(float3 position, float3 next, simulation_parameters params, collision_volumes volumes) {
+//After the collision response, the particle's position is only partially updated, 
+//the advection  must be recursive until the entire movement is completed
+collision_response handle_collisions(
+	float3 old_position, 
+	float3 position, 
+	float3 next, 
+	float restitution, float time_elapsed, 
+	global const float* face_normals,
+	global const float* vertices,
+	global const uint* indices,
+	uint face_count) {
+	
 	collision_response response = {
-		position, next,
+		position, next, 0, time_elapsed,
 	};
 
-	for(int i = 0; i < COLLISION_VOLUMES_COUNT; ++i) {
-		if(volumes.spheres[i].active) {
-			float s = sphere(response.position, volumes.spheres[i]);
-			if((s * volumes.spheres[i].container_or_obstacle) > 0.f) {
-				collision col = interpret_sphere_collision(response.position, s, volumes.spheres[i]);
-				respond(&response, col, params);
-			}
-		}
+	collision c;
 
-		if(volumes.capsules[i].active) {
-			float c = capsule(response.position, volumes.capsules[i]);
-			if((c * volumes.capsules[i].container_or_obstacle) > 0.f) {
-				collision col = interpret_capsule_collision(response.position, c, volumes.capsules[i]);
-				respond(&response, col, params);
-			}
-		}
-
-		if(volumes.boxes[i].active) {
-			float b = box(response.position, volumes.boxes[i]);
-			if(b * volumes.boxes[i].container_or_obstacle > 0.f) {
-				collision col = interpret_box_collision(response.position, b, volumes.boxes[i]);
-				respond(&response, col, params);
-			}
-		}
-	}
-
-	float b = box(response.position, volumes.scene_bounding_box);
-	if(b * volumes.scene_bounding_box.container_or_obstacle > 0.f) {
-		collision col = interpret_box_collision(response.position, b, volumes.scene_bounding_box);
-		respond(&response, col, params);
+	if(detect_collision(&c, old_position, position, face_normals, vertices, indices, face_count)) {
+		response.collision_happened = 1;
+		respond(&response, c, restitution, time_elapsed);
+		response.time_elapsed = time_elapsed * 
+			(length(response.position - old_position) / length(position - old_position));
 	}
 
 	return response;

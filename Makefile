@@ -1,5 +1,5 @@
 #Target platform string.  Either osx or linux
-PLATFORM=osx
+PLATFORM=linux
 
 #Path to OpenCL headers' containing folder
 OPENCL_INCLUDE_DIR=/opt/AMDAPP/include 
@@ -16,7 +16,7 @@ OUT_DIR = bin/
 LIB_PARTIO_A_PATH=
 
 #Uncomment this line if a local cl.hpp is required
-LOCAL_CL_HPP=-DUSE_LOCAL_CL_HPP
+#LOCAL_CL_HPP=-DUSE_LOCAL_CL_HPP
 
 #No editing should be required beyond this line
 
@@ -39,15 +39,18 @@ LIBRARY_FILES = 											\
 	libclsph/sph_simulation.cpp 							\
 	libclsph/file_save_delegates/houdini_file_saver.cpp 	\
 	util/cl_boilerplate.cpp 								\
-	libclsph/collision_volumes_loader.cpp 					\
 	util/houdini_geo/HoudiniFileDumpHelper.cpp				\
+	libclsph/scene.cpp 										\
+	util/tinyobj/tiny_obj_loader.cc
+
 
 _OBJECT_FILES =					\
 	sph_simulation.o			\
 	houdini_file_saver.o 		\
 	cl_boilerplate.o			\
-	collision_volumes_loader.o	\
 	HoudiniFileDumpHelper.o		\
+	scene.o 					\
+	tiny_obj_loader.o 			
 
 PROP_FOLDERS = fluid_properties simulation_properties scenes
 KERNEL_FOLDERS = libclsph/kernels libclsph/common
