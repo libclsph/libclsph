@@ -3,7 +3,11 @@ libclsph
 
 An OpenCL based GPU accelerated SPH fluid simulation library
 
-![alt tag](http://i.imgur.com/iambaDc.png)
+Can I see it in action?
+-----------------------
+
+[Demo #1](https://www.youtube.com/watch?v=s7RinwmAOLU)    
+[Demo #2](https://www.youtube.com/watch?v=uJznjnEIfrg)
 
 Why?
 -----------------------
@@ -28,5 +32,4 @@ Libraries used
 * [picojson](https://github.com/kazuho/picojson) is used to load simulation properties from files.
 * [cereal](http://uscilab.github.io/cereal/) is used for all serialization needs.
 * [partio](http://www.disneyanimation.com/technology/partio.html) is used to import/export particle data.
-
-
+* [tinyobjloader](https://github.com/syoyo/tinyobjloader) is used to load geometry in obj format.
