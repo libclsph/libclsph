@@ -51,7 +51,8 @@ int main(int argc, char** argv) {
         std::cout << std::setiosflags(std::ios::fixed) <<
         "|" << "            step 1"
         "|" << "            step 2"
-        "|" << "              sort"  
+        "|" << "   sort (GPU part)"  
+        "|" << "   sort (CPU part)"  
         "|" << "  memory transfers"
         "|" << "           file IO" << 
         "|" << std::endl;
@@ -60,6 +61,7 @@ int main(int argc, char** argv) {
         "|" << std::setprecision(3) << std::setw(18) << (float)profile.data[1] / i / 1000.f <<
         "|" << std::setprecision(3) << std::setw(18) << (float)profile.data[2] / i / 1000.f <<
         "|" << std::setprecision(3) << std::setw(18) << (float)profile.data[3] / i / 1000.f <<
+        "|" << std::setprecision(3) << std::setw(18) << (float)profile.data[6] / i / 1000.f <<
         "|" << std::setprecision(3) << std::setw(18) << (float)profile.data[4] / i / 1000.f <<
         "|" << std::setprecision(3) << std::setw(18) << (float)profile.data[5] / i / 1000.f << 
         "|" << std::endl;

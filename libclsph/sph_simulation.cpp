@@ -9,7 +9,7 @@
 #include "sph_simulation.h"
 #include "common/util.h"
 
-#define SORT_THREAD_COUNT 1024
+#define SORT_THREAD_COUNT 128
 #define BUCKET_COUNT 256
 #define RADIX_WIDTH 8
 
@@ -17,9 +17,10 @@
 
 #define STEP_1 1
 #define STEP_2 2
-#define SORT 3
+#define SORT_GPU 3
 #define MEMORY_TRANSFERS 4
 #define FILE_IO 5
+#define SORT_CPU 6
 
 const std::string BUFFER_KERNEL_FILE_NAME = "kernels/sph.cl";
 
@@ -135,17 +136,17 @@ void sph_simulation::sort_particles(
             check_cl_error(
                 queue.enqueueWriteBuffer(count_buffer, CL_TRUE, 0,
                     sizeof(unsigned int) * SORT_THREAD_COUNT * BUCKET_COUNT, count_array));
-                queue.finish();
+            queue.finish();
         }
 
         set_kernel_args(kernel_sort_count, 
             *current_input_buffer, count_buffer, parameters, SORT_THREAD_COUNT, pass_number, RADIX_WIDTH);
 
-        profile(SORT, &profile) {
-        check_cl_error(
-            queue.enqueueNDRangeKernel(
-                kernel_sort_count, cl::NullRange,
-                cl::NDRange(SORT_THREAD_COUNT), cl::NullRange));
+        profile(SORT_GPU, &profile) {
+            check_cl_error(
+                queue.enqueueNDRangeKernel(
+                    kernel_sort_count, cl::NullRange,
+                    cl::NDRange(SORT_THREAD_COUNT), cl::NullRange));
             queue.finish();
         }
 
@@ -155,10 +156,10 @@ void sph_simulation::sort_particles(
                     count_buffer, CL_TRUE, 0,
                     sizeof(unsigned int) * SORT_THREAD_COUNT * BUCKET_COUNT,
                     count_array));
-                queue.finish();
+            queue.finish();
         }
 
-        profile(SORT, &profile) {
+        profile(SORT_CPU, &profile) {
             unsigned int running_count = 0;
             for(int i = 0; i < SORT_THREAD_COUNT * BUCKET_COUNT; ++i) {
                 unsigned int tmp = count_array[i];
@@ -172,18 +173,18 @@ void sph_simulation::sort_particles(
                 queue.enqueueWriteBuffer(count_buffer, CL_TRUE, 0,
                     sizeof(unsigned int) * SORT_THREAD_COUNT * BUCKET_COUNT,
                     count_array));
-                queue.finish();
+            queue.finish();
         }
 
         set_kernel_args(kernel_sort, 
             *current_input_buffer, *current_output_buffer, count_buffer, parameters, SORT_THREAD_COUNT, pass_number, RADIX_WIDTH);
 
-        profile(SORT, &profile) {
+        profile(SORT_GPU, &profile) {
             check_cl_error(
                 queue.enqueueNDRangeKernel(
                     kernel_sort, cl::NullRange,
                     cl::NDRange(SORT_THREAD_COUNT), cl::NullRange));
-                queue.finish();
+            queue.finish();
         }
 
         cl::Buffer* tmp = current_input_buffer;
@@ -196,16 +197,18 @@ void sph_simulation::sort_particles(
             queue.enqueueReadBuffer(*current_input_buffer, CL_TRUE, 0,
                 sizeof(particle) * parameters.particles_count,
                 particles));
-            queue.finish();
+        queue.finish();
     }
 
     delete[] count_array;
 
-    unsigned int current_index = 0;
-    for(unsigned int i = 0; i < parameters.grid_cell_count; ++i) {
-        cell_table[i] = current_index;
-        while(current_index != parameters.particles_count && particles[current_index].grid_index == i) {
-            current_index++;
+    profile(SORT_CPU, &profile) {
+        unsigned int current_index = 0;
+        for(unsigned int i = 0; i < parameters.grid_cell_count; ++i) {
+            cell_table[i] = current_index;
+            while(current_index != parameters.particles_count && particles[current_index].grid_index == i) {
+                current_index++;
+            }
         }
     }
 }
