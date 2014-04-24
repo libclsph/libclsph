@@ -46,32 +46,11 @@ typedef struct {
 } particle;
 
 typedef struct {
-    cl_float3 center;
-    cl_float radius;
-    cl_int container_or_obstacle; //-1 for obstacle, 1 for container
-    cl_int active;
-} collision_sphere;
-
-typedef struct {
-    cl_float3 p0;
-    cl_float3 p1;
-    cl_float radius;
-    cl_int container_or_obstacle;
-    cl_int active;
-} collision_capsule;
-
-typedef struct {
-    cl_float3 center;
-    cl_float3 axis_extends;
-    cl_int container_or_obstacle;
-    cl_int active;
-} collision_box;
-
-typedef struct {
-    collision_box scene_bounding_box;
-    collision_box boxes[COLLISION_VOLUMES_COUNT];
-    collision_sphere spheres[COLLISION_VOLUMES_COUNT];
-    collision_capsule capsules[COLLISION_VOLUMES_COUNT];
-} collision_volumes;
+    float poly_6;
+    float poly_6_gradient;
+    float poly_6_laplacian;
+    float spiky;
+    float viscosity;
+} precomputed_kernel_values;
 
 #endif

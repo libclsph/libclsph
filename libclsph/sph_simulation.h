@@ -10,13 +10,12 @@ class sph_simulation {
 public:
 	sph_simulation() :
 		parameters(),
-		volumes(),
 		write_intermediate_frames(false) { }
 
 	void simulate(int frame_count = 0);
 
 	simulation_parameters parameters;
-	collision_volumes volumes;
+	precomputed_kernel_values precomputed_terms;
 
 	std::function<void(particle*, const simulation_parameters&, bool, profile_data&)> pre_frame;
 	std::function<void(particle*, const simulation_parameters&, bool, profile_data&)> post_frame;

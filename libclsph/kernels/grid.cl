@@ -32,14 +32,11 @@ uint2 get_start_end_indices_for_cell(uint cell_index,
  * @param[in]  particles        Contains all the particle data
  * @param[out] out_particles    Will contain the particle data with the added information
  * @param[in]  params           Contains the simulation parameters
- * @param[in]  volumes          Contains all the volumes with which the fluid can interact. Also contains the simulation boundaries
- *
  */
 void kernel locate_in_grid(
     global const particle* particles, 
     global particle* out_particles,
-    simulation_parameters params,
-    collision_volumes volumes){
+    simulation_parameters params){
 
     const size_t current_particle_index = get_global_id(0);
     out_particles[current_particle_index] = particles[current_particle_index];

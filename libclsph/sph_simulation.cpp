@@ -283,7 +283,7 @@ void sph_simulation::simulate_single_frame(
     // Locate each particle in the grid and build the grid count table
     //----------------------------------------------------------------
 
-    set_kernel_args(kernel_locate_in_grid, input_buffer, output_buffer, parameters, volumes);
+    set_kernel_args(kernel_locate_in_grid, input_buffer, output_buffer, parameters);
 
     check_cl_error(
         queue.enqueueNDRangeKernel(
@@ -332,7 +332,8 @@ void sph_simulation::simulate_single_frame(
     check_cl_error(kernel_step_1.setArg(1, size_of_groups * sizeof(particle), NULL)); //Declare local memory in arguments
     check_cl_error(kernel_step_1.setArg(2, output_buffer));
     check_cl_error(kernel_step_1.setArg(3, parameters));
-    check_cl_error(kernel_step_1.setArg(4, cell_table_buffer));
+    check_cl_error(kernel_step_1.setArg(4, precomputed_terms));
+    check_cl_error(kernel_step_1.setArg(5, cell_table_buffer));
 
     profile(STEP_1, &profile) {
         check_cl_error(
@@ -381,11 +382,12 @@ void sph_simulation::simulate_single_frame(
     check_cl_error(kernel_step_2.setArg(0, output_buffer));
     check_cl_error(kernel_step_2.setArg(1, input_buffer));
     check_cl_error(kernel_step_2.setArg(2, parameters));
-    check_cl_error(kernel_step_2.setArg(3, cell_table_buffer));
-    check_cl_error(kernel_step_2.setArg(4, face_normals_buffer));
-    check_cl_error(kernel_step_2.setArg(5, vertices_buffer));
-    check_cl_error(kernel_step_2.setArg(6, indices_buffer));
-    check_cl_error(kernel_step_2.setArg(7, current_scene.face_count));
+    check_cl_error(kernel_step_2.setArg(3, precomputed_terms));
+    check_cl_error(kernel_step_2.setArg(4, cell_table_buffer));
+    check_cl_error(kernel_step_2.setArg(5, face_normals_buffer));
+    check_cl_error(kernel_step_2.setArg(6, vertices_buffer));
+    check_cl_error(kernel_step_2.setArg(7, indices_buffer));
+    check_cl_error(kernel_step_2.setArg(8, current_scene.face_count));
 
     profile(STEP_2, &profile) {
         check_cl_error(
@@ -521,4 +523,10 @@ void sph_simulation::load_settings(std::string fluid_file_name, std::string para
     parameters.time_delta = 1.f / parameters.target_fps;
 
     parameters.max_velocity = 0.8f * parameters.h / parameters.time_delta;
+
+    precomputed_terms.poly_6 = 315.f / (64.f * M_PI * pow(parameters.h, 9.f));
+    precomputed_terms.poly_6_gradient = -945.f / (32.f * M_PI * pow(parameters.h, 9.f));
+    precomputed_terms.poly_6_laplacian = -945.f / (32.f * M_PI * pow(parameters.h, 9.f));
+    precomputed_terms.spiky = -45.f / (M_PI * pow(parameters.h, 6.f));
+    precomputed_terms.viscosity = 45.f / (M_PI * pow(parameters.h, 6.f));
 }

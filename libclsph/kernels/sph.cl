@@ -11,6 +11,7 @@ void kernel step_1(
     __local particle* local_data,
     global particle* output_data,
     const simulation_parameters params,
+    const precomputed_kernel_values smoothing_terms,
     global const unsigned int* cell_table) {
 
     /* we'll get the same amount of global_ids as there are particles */
@@ -25,7 +26,7 @@ void kernel step_1(
     
     particle current_particle = local_data[index_in_group];
     
-    current_particle.density = compute_density_with_grid(current_particle_index, input_data, params, cell_table);
+    current_particle.density = compute_density_with_grid(current_particle_index, input_data, params, smoothing_terms, cell_table);
 
     output_data[current_particle_index] = current_particle;
 
@@ -37,7 +38,8 @@ void kernel step_1(
 void kernel step_2(
     global const particle* input_data,
     global particle* output_data,
-    simulation_parameters params,
+    const simulation_parameters params,
+    const precomputed_kernel_values smoothing_terms,
     global const unsigned int* cell_table,
     global const float* face_normals,
     global const float* vertices,
@@ -49,7 +51,7 @@ void kernel step_2(
     output_data[current_particle_index] = input_data[current_particle_index];
 
     float3 acceleration =
-        compute_internal_forces_with_grid(current_particle_index, input_data, params, cell_table) /
+        compute_internal_forces_with_grid(current_particle_index, input_data, params, smoothing_terms, cell_table) /
         input_data[current_particle_index].density;
 
     acceleration += input_data[current_particle_index].constant_acceleration;
