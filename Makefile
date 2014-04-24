@@ -33,7 +33,7 @@ else
 	LIBS=-lOpenCL -lz
 endif
 
-FLAGS = --std=c++11 -g -Wfatal-errors -Wall -Wextra -pedantic -Wno-deprecated-declarations $(LOCAL_CL_HPP)
+FLAGS = --std=c++11 -g -Wfatal-errors -Wall -Wextra -Wno-sign-compare -Wno-deprecated-declarations $(LOCAL_CL_HPP)
 
 LIBRARY_FILES = 											\
 	libclsph/sph_simulation.cpp 							\

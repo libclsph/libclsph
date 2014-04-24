@@ -1,11 +1,13 @@
 #define EXIT_ON_CL_ERROR
 
 #include <iostream>
+#include <iomanip>
 #include <string>
 
 #include "sph_simulation.h"
 #include "file_save_delegates/houdini_file_saver.h"
 #include "../util/cereal/archives/binary.hpp"
+#include "../util/profile.hpp"
 
 int main(int argc, char** argv) {
 
@@ -29,7 +31,8 @@ int main(int argc, char** argv) {
     }
 
     int i = 0;
-    simulation.pre_frame = [&] (particle* particles, const simulation_parameters& params, bool full_frame) {
+
+    simulation.pre_frame = [&] (particle* particles, const simulation_parameters& params, bool full_frame, profile_data& profile) {
         if(simulation.write_intermediate_frames != full_frame) {
             saver.writeFrameToFile(particles, params);
         }
@@ -41,7 +44,42 @@ int main(int argc, char** argv) {
             archive.saveBinary(particles,sizeof(particle)*params.particles_count);
         }
 
-        std::cout << "frame: " << i++ << std::endl << std::endl ;
+        ++i;
+
+        std::cout << "Profile values averages over all frames" << std::endl;
+
+        std::cout << std::setiosflags(std::ios::fixed) <<
+        "|" << "            step 1"
+        "|" << "            step 2"
+        "|" << "              sort"  
+        "|" << "  memory transfers"
+        "|" << "           file IO" << 
+        "|" << std::endl;
+
+        std::cout << std::setiosflags(std::ios::fixed) <<
+        "|" << std::setprecision(3) << std::setw(18) << (float)profile.data[1] / i / 1000.f <<
+        "|" << std::setprecision(3) << std::setw(18) << (float)profile.data[2] / i / 1000.f <<
+        "|" << std::setprecision(3) << std::setw(18) << (float)profile.data[3] / i / 1000.f <<
+        "|" << std::setprecision(3) << std::setw(18) << (float)profile.data[4] / i / 1000.f <<
+        "|" << std::setprecision(3) << std::setw(18) << (float)profile.data[5] / i / 1000.f << 
+        "|" << std::endl;
+
+        int num_frames = 
+            params.simulation_time / (params.time_delta * params.simulation_scale);
+
+        int progress = i * 80 / num_frames;
+
+        std::cout << std::endl << "Progress" << std::endl;
+        std::cout << "[";
+        for(int j = 0; j < 80; ++j) {
+            if(j < progress) {
+                std::cout << "-";
+            } else {
+                std::cout << " ";
+            }
+        }
+        std::cout << "] " << i << "/" << num_frames << std::endl;
+        std::cout << "\033[F" << "\033[F" << "\033[F" << "\033[F" << "\033[F" << "\033[F";
     };
 
     std::cout << std::endl << 
@@ -69,8 +107,6 @@ int main(int argc, char** argv) {
         "Kernel support radius (h): " << simulation.parameters.h << std::endl <<
         std::endl <<
         "Saving to folder:          " << saver.frames_folder_prefix + "frames/" << std::endl;
-
-    //simulation.load_scene(std::string("scenes/") + argv[3] + std::string(".json"));
 
     if(!simulation.current_scene.load(argv[3])) {
         std::cerr << "Unable to load scene: " << argv[3] << std::endl;

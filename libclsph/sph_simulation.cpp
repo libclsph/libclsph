@@ -4,7 +4,6 @@
 #define EXIT_ON_CL_ERROR
 
 #include "../util/pico_json/picojson.h"
-#include "../util/profile.hpp"
 #include "../util/cereal/archives/binary.hpp"
 
 #include "sph_simulation.h"
@@ -15,6 +14,12 @@
 #define RADIX_WIDTH 8
 
 #define CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE_AMD 64
+
+#define STEP_1 1
+#define STEP_2 2
+#define SORT 3
+#define MEMORY_TRANSFERS 4
+#define FILE_IO 5
 
 const std::string BUFFER_KERNEL_FILE_NAME = "kernels/sph.cl";
 
@@ -113,12 +118,11 @@ void sph_simulation::sort_particles(
         sizeof(unsigned int) * SORT_THREAD_COUNT * BUCKET_COUNT);
 
     for(int pass_number = 0; pass_number < 4; ++pass_number) {
-
         for(int i = 0; i < SORT_THREAD_COUNT * BUCKET_COUNT; ++i) {
             count_array[i] = 0;
         }
 
-        profile(profile_block::MEMORY_TRANSFERS, profile_block::TALLY_STEP_TIME) {
+        profile(MEMORY_TRANSFERS, &profile) {
             check_cl_error(
                 queue.enqueueWriteBuffer(input_buffer, CL_TRUE, 0,
                     sizeof(particle) * parameters.particles_count, particles));
@@ -132,7 +136,7 @@ void sph_simulation::sort_particles(
         set_kernel_args(kernel_sort_count, 
             input_buffer, count_buffer, parameters, SORT_THREAD_COUNT, pass_number, RADIX_WIDTH);
 
-        profile(profile_block::SORT, profile_block::TALLY_STEP_TIME) {
+        profile(SORT, &profile) {
         check_cl_error(
             queue.enqueueNDRangeKernel(
                 kernel_sort_count, cl::NullRange,
@@ -140,7 +144,7 @@ void sph_simulation::sort_particles(
             queue.finish();
         }
 
-        profile(profile_block::MEMORY_TRANSFERS, profile_block::TALLY_STEP_TIME) {
+        profile(MEMORY_TRANSFERS, &profile) {
             check_cl_error(
                 queue.enqueueReadBuffer(
                     count_buffer, CL_TRUE, 0,
@@ -149,7 +153,7 @@ void sph_simulation::sort_particles(
                 queue.finish();
         }
 
-        profile(profile_block::SORT, profile_block::TALLY_STEP_TIME) {
+        profile(SORT, &profile) {
             unsigned int running_count = 0;
             for(int i = 0; i < SORT_THREAD_COUNT * BUCKET_COUNT; ++i) {
                 unsigned int tmp = count_array[i];
@@ -158,7 +162,7 @@ void sph_simulation::sort_particles(
             }
         }
 
-        profile(profile_block::MEMORY_TRANSFERS, profile_block::TALLY_STEP_TIME) {
+        profile(MEMORY_TRANSFERS, &profile) {
             check_cl_error(
                 queue.enqueueWriteBuffer(count_buffer, CL_TRUE, 0,
                     sizeof(unsigned int) * SORT_THREAD_COUNT * BUCKET_COUNT,
@@ -169,7 +173,7 @@ void sph_simulation::sort_particles(
         set_kernel_args(kernel_sort, 
             input_buffer, output_buffer, count_buffer, parameters, SORT_THREAD_COUNT, pass_number, RADIX_WIDTH);
 
-        profile(profile_block::SORT, profile_block::TALLY_STEP_TIME) {
+        profile(SORT, &profile) {
             check_cl_error(
                 queue.enqueueNDRangeKernel(
                     kernel_sort, cl::NullRange,
@@ -177,7 +181,7 @@ void sph_simulation::sort_particles(
                 queue.finish();
         }
 
-        profile(profile_block::MEMORY_TRANSFERS, profile_block::TALLY_STEP_TIME) {
+        profile(MEMORY_TRANSFERS, &profile) {
             check_cl_error(
                 queue.enqueueReadBuffer(output_buffer, CL_TRUE, 0,
                     sizeof(particle) * parameters.particles_count,
@@ -226,7 +230,7 @@ void sph_simulation::simulate_single_frame(
     // Initial transfer to the GPU
     //-----------------------------------------------------
 
-    profile(profile_block::MEMORY_TRANSFERS, profile_block::TALLY_STEP_TIME) {
+    profile(MEMORY_TRANSFERS, &profile) {
         check_cl_error(
             queue.enqueueWriteBuffer(
                 input_buffer, CL_TRUE, 0,
@@ -264,8 +268,6 @@ void sph_simulation::simulate_single_frame(
         parameters.grid_size_y, 
         parameters.grid_size_z);
 
-    std::cout << "Grid size:" << parameters.grid_size_x << ":" << parameters.grid_size_y << ":" << parameters.grid_size_z << std::endl;
-
     unsigned int* cell_table = new unsigned int[parameters.grid_cell_count];
 
     //----------------------------------------------------------------
@@ -279,7 +281,7 @@ void sph_simulation::simulate_single_frame(
             kernel_locate_in_grid, cl::NullRange,
             cl::NDRange(parameters.particles_count), cl::NDRange(size_of_groups)));
 
-    profile(profile_block::MEMORY_TRANSFERS, profile_block::TALLY_STEP_TIME) {
+    profile(MEMORY_TRANSFERS, &profile) {
         check_cl_error(
             queue.enqueueReadBuffer(
                 output_buffer,
@@ -301,7 +303,7 @@ void sph_simulation::simulate_single_frame(
         CL_MEM_READ_WRITE |  CL_MEM_ALLOC_HOST_PTR ,  
         sizeof(unsigned int) * parameters.grid_cell_count);
     
-    profile(profile_block::MEMORY_TRANSFERS, profile_block::TALLY_STEP_TIME) {
+    profile(MEMORY_TRANSFERS, &profile) {
         check_cl_error(
             queue.enqueueWriteBuffer(
                 cell_table_buffer, CL_TRUE, 0,
@@ -324,7 +326,7 @@ void sph_simulation::simulate_single_frame(
     check_cl_error(kernel_step_1.setArg(3, parameters));
     check_cl_error(kernel_step_1.setArg(4, cell_table_buffer));
 
-    profile(profile_block::STEP_1, profile_block::TALLY_STEP_TIME) {
+    profile(STEP_1, &profile) {
         check_cl_error(
             queue.enqueueNDRangeKernel(
                 kernel_step_1, cl::NullRange,
@@ -332,7 +334,7 @@ void sph_simulation::simulate_single_frame(
                 queue.finish();
     }
 
-    profile(profile_block::MEMORY_TRANSFERS, profile_block::TALLY_STEP_TIME) {
+    profile(MEMORY_TRANSFERS, &profile) {
         check_cl_error(
             queue.enqueueReadBuffer(
                 output_buffer,
@@ -351,7 +353,7 @@ void sph_simulation::simulate_single_frame(
     cl::Buffer vertices_buffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, sizeof(float) * current_scene.vertices.size());
     cl::Buffer indices_buffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, sizeof(unsigned int) * current_scene.indices.size());
 
-    profile(profile_block::MEMORY_TRANSFERS, profile_block::TALLY_STEP_TIME) {
+    profile(MEMORY_TRANSFERS, &profile) {
         check_cl_error(
             queue.enqueueWriteBuffer(
                 input_buffer, CL_TRUE, 0,
@@ -384,7 +386,7 @@ void sph_simulation::simulate_single_frame(
     check_cl_error(kernel_step_2.setArg(6, indices_buffer));
     check_cl_error(kernel_step_2.setArg(7, current_scene.face_count));
 
-    profile(profile_block::STEP_2, profile_block::TALLY_STEP_TIME) {
+    profile(STEP_2, &profile) {
         check_cl_error(
             queue.enqueueNDRangeKernel(
                 kernel_step_2, cl::NullRange,
@@ -392,7 +394,7 @@ void sph_simulation::simulate_single_frame(
         queue.finish();
     }
 
-    profile(profile_block::MEMORY_TRANSFERS, profile_block::TALLY_STEP_TIME) {
+    profile(MEMORY_TRANSFERS, &profile) {
         check_cl_error(
             queue.enqueueReadBuffer(
                 output_buffer, CL_TRUE, 0,
@@ -439,13 +441,11 @@ void sph_simulation::simulate(int frame_count) {
 
     for(int i = 0; i < frame_count; ++i) {
         if(pre_frame)  {
-            profile("pre-frame", profile_block::COUT_LOG) {
-                pre_frame(particles, parameters, true);
-            }
+            pre_frame(particles, parameters, true, profile);
         }
 
         for(int j = 0; (float)j < (1.f / parameters.simulation_scale); ++j) {
-            if(pre_frame) pre_frame(particles, parameters, false);
+            if(pre_frame) pre_frame(particles, parameters, false, profile);
 
             simulate_single_frame(
                 particles, particles,
@@ -454,27 +454,12 @@ void sph_simulation::simulate(int frame_count) {
                 kernel_sort_count, kernel_sort,
                 queue, context);
 
-            //Here we assume that post_frame does file IO
-            profile(profile_block::FILE_IO, profile_block::TALLY_STEP_TIME) {
-                if(post_frame) post_frame(particles, parameters, false);
-            }
-
-            //If this is not the last step, print benchmark now, no post-frame operations will be done just yet
-            if( (float)j+1 < (1.f / parameters.simulation_scale) ){
-                profile_block::print_stats();
-                profile_block::reset_stats();
-            }
-
+            if(post_frame) post_frame(particles, parameters, false, profile);
         }
 
         if(post_frame) {
-             profile(profile_block::FILE_IO, profile_block::TALLY_STEP_TIME) {
-                post_frame(particles, parameters, true);
-            }
+            post_frame(particles, parameters, true, profile);
         }
-
-        profile_block::print_stats();
-        profile_block::reset_stats();
     }
     delete[] particles;
 }
@@ -490,7 +475,7 @@ void sph_simulation::load_settings(std::string fluid_file_name, std::string para
         parameters.fluid_density = (float)(fluid_params.get<picojson::object>()["fluid_density"].get<double>());
         parameters.dynamic_viscosity = (float)(fluid_params.get<picojson::object>()["dynamic_viscosity"].get<double>());
         parameters.restitution = (float)(fluid_params.get<picojson::object>()["restitution"].get<double>());
-        if ( parameters.restitution < 0 || parameters.restitution > 1) {
+        if (parameters.restitution < 0 || parameters.restitution > 1) {
             throw std::runtime_error( "Restitution has an invalid value!" );
         }
 

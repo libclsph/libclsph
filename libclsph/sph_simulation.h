@@ -4,6 +4,7 @@
 #include <functional>
 #include "common/structures.h"
 #include "scene.h"
+#include "../util/profile.hpp"
 
 class sph_simulation {
 public:
@@ -17,8 +18,8 @@ public:
 	simulation_parameters parameters;
 	collision_volumes volumes;
 
-	std::function<void(particle*, const simulation_parameters&, bool)> pre_frame;
-	std::function<void(particle*, const simulation_parameters&, bool)> post_frame;
+	std::function<void(particle*, const simulation_parameters&, bool, profile_data&)> pre_frame;
+	std::function<void(particle*, const simulation_parameters&, bool, profile_data&)> post_frame;
 
 	void load_settings(std::string fluid_file_name, std::string parameters_file_name);
 
@@ -42,6 +43,8 @@ private:
 	    cl::Buffer&, cl::Buffer&,
         cl::Kernel&, cl::Kernel&, cl::Kernel&, cl::Kernel&,
 	    cl::Kernel&, cl::CommandQueue&, cl::Context);
+
+	profile_data profile;
 };
 
 #endif
