@@ -105,7 +105,7 @@ void sph_simulation::init_particles(particle* buffer , const simulation_paramete
 }
 
 /**
- * @brief Sorts the particles according to their grid index cell using Radix Sort 
+ * @brief Sorts the particles according to their grid index using Radix Sort 
  *
  * @param[in,out] particles      The array that contains the actual particle data        
  * @param[in] first_buffer       The first OpenCL buffer used
