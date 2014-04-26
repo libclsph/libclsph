@@ -104,6 +104,19 @@ void sph_simulation::init_particles(particle* buffer , const simulation_paramete
 
 }
 
+/**
+ * @brief Sorts the particles according to their grid index cell using Radix Sort 
+ *
+ * @param[in,out] particles      The array that contains the actual particle data        
+ * @param[in] first_buffer       The first OpenCL buffer used
+ * @param[in] second_buffer      The second OpenCL buffer used
+ * @param[in] kernel_sort_count  The kernel that builds the Radix Sort counts on the GPU 
+ * @param[in] kernel_sort        The kernel that does the actual sorting on the GPU
+ * @param[in] queue              The OpenCL queue
+ * @param[in] context            The OpenCL context
+ * @param[out] cell_table        The array that contains the start indexes of the cell in the sorted array
+ *
+ */
 void sph_simulation::sort_particles(
     particle* particles,
     cl::Buffer& first_buffer, cl::Buffer& second_buffer,
@@ -202,6 +215,10 @@ void sph_simulation::sort_particles(
 
     delete[] count_array;
 
+    //-----------------------------------------------------
+    // Build the cell_table 
+    //-----------------------------------------------------
+
     profile(SORT_CPU, &profile) {
         unsigned int current_index = 0;
         for(unsigned int i = 0; i < parameters.grid_cell_count; ++i) {
@@ -211,6 +228,7 @@ void sph_simulation::sort_particles(
             }
         }
     }
+
 }
 
 void sph_simulation::simulate_single_frame(
@@ -250,6 +268,10 @@ void sph_simulation::simulate_single_frame(
             queue.finish();
     }
 
+    //-----------------------------------------------------
+    // Recalculate the boundaries of the grid
+    //-----------------------------------------------------
+
     cl_float min_x, max_x, min_y, max_y, min_z, max_z;
     min_x = min_y = min_z = std::numeric_limits<cl_int>::max();
     max_x = max_y = max_z = std::numeric_limits<cl_int>::min();
@@ -280,11 +302,11 @@ void sph_simulation::simulate_single_frame(
         parameters.grid_size_y, 
         parameters.grid_size_z);
 
-    unsigned int* cell_table = new unsigned int[parameters.grid_cell_count];
-
     //----------------------------------------------------------------
     // Locate each particle in the grid and build the grid count table
     //----------------------------------------------------------------
+
+    unsigned int* cell_table = new unsigned int[parameters.grid_cell_count];
 
     set_kernel_args(kernel_locate_in_grid, input_buffer, output_buffer, parameters);
 
