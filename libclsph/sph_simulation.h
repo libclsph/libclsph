@@ -4,7 +4,7 @@
 #include <functional>
 #include "common/structures.h"
 #include "scene.h"
-#include "../util/profile.hpp"
+#include "util/profile.hpp"
 
 class sph_simulation {
 public:

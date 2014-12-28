@@ -1,6 +1,6 @@
 #include "scene.h"
 
-#include "../util/tinyobj/tiny_obj_loader.h"
+#include "util/tinyobj/tiny_obj_loader.h"
 
 #include <iostream>
 #include <cassert>

@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "../common/structures.h"
+#include "common/structures.h"
 
 class houdini_file_saver {
 public:
