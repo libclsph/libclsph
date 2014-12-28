@@ -47,8 +47,26 @@ if(BUILD_EXAMPLES)
     link_directories(${PROJECT_BINARY_DIR}/lib)
 
     # Houdini output example
-    add_executable(particles example/particles.cpp)
-    set_target_properties(particles PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/examples)
-    target_link_libraries(particles clsph)
+    add_executable(clsphparticles example/particles.cpp)
+    set_target_properties(clsphparticles PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/examples)
+    target_link_libraries(clsphparticles clsph)
 
+    find_package(OpenGL)
+    find_package(GLEW)
+    find_package(GLFW)
+
+    # OpenGL rendered example requires OpenGL, GLEW and GLFW
+    if(OPENGL_FOUND AND GLEW_FOUND AND GLFW_FOUND)
+        include_directories(${OPENGL_INCLUDE_DIRS})
+        include_directories(${GLEW_INCLUDE_DIRS})
+        include_directories(${GLFW_INCLUDE_DIRS})
+
+        add_executable(clsphopengl example/opengl.cpp)
+        set_target_properties(clsphopengl PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/examples)
+        
+        target_link_libraries(clsphopengl clsph)
+        target_link_libraries(clsph ${OPENGL_LIBRARIES})
+        target_link_libraries(clsph ${GLEW_LIBRARIES})
+        target_link_libraries(clsph ${GLFW_LIBRARIES})
+    endif(OPENGL_FOUND AND GLEW_FOUND AND GLFW_FOUND)
 endif(BUILD_EXAMPLES)
