@@ -3,10 +3,10 @@
 #include <iomanip>
 #include <string>
 
-#include "../../util/houdini_geo/HoudiniFileDumpHelper.h"
+#include "util/houdini_geo/HoudiniFileDumpHelper.h"
 
 #ifdef USE_PARTIO
-#include "../../util/partio/PartioFunctions.h"
+#include "util/partio/PartioFunctions.h"
 #endif
 
 #define OUTPUT_FILE_NAME "frames/frame"

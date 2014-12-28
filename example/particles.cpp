@@ -6,8 +6,8 @@
 
 #include "sph_simulation.h"
 #include "file_save_delegates/houdini_file_saver.h"
-#include "../util/cereal/archives/binary.hpp"
-#include "../util/profile.hpp"
+#include "util/cereal/archives/binary.hpp"
+#include "util/profile.hpp"
 
 int main(int argc, char** argv) {
 

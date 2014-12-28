@@ -8,7 +8,7 @@
 #define cl_float3 float3
 #define cl_uint3 uint3
 #else
-#include "../../util/cl_boilerplate.h"
+#include "util/cl_boilerplate.h"
 #endif
 
 #define COLLISION_VOLUMES_COUNT 3

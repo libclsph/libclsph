@@ -3,8 +3,8 @@
 
 #define EXIT_ON_CL_ERROR
 
-#include "../util/pico_json/picojson.h"
-#include "../util/cereal/archives/binary.hpp"
+#include "util/pico_json/picojson.h"
+#include "util/cereal/archives/binary.hpp"
 
 #include "sph_simulation.h"
 #include "common/util.h"
