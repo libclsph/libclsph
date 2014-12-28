@@ -51,9 +51,11 @@ int main(int argc, char** argv) {
         std::cout << std::setiosflags(std::ios::fixed) <<
         "|" << "            step 1"
         "|" << "            step 2"
-        "|" << "   sort (GPU part)"  
+        "|" << " sort (GPU bucket)"  
+        "|" << "  sort (GPU count)"  
         "|" << "   sort (CPU part)"  
-        "|" << "  memory transfers"
+        "|" << "           r/w SPH"
+        "|" << "          r/w Sort"
         "|" << "           file IO" << 
         "|" << std::endl;
 
@@ -61,9 +63,11 @@ int main(int argc, char** argv) {
         "|" << std::setprecision(3) << std::setw(18) << (float)profile.data[1] / i / 1000.f <<
         "|" << std::setprecision(3) << std::setw(18) << (float)profile.data[2] / i / 1000.f <<
         "|" << std::setprecision(3) << std::setw(18) << (float)profile.data[3] / i / 1000.f <<
-        "|" << std::setprecision(3) << std::setw(18) << (float)profile.data[6] / i / 1000.f <<
         "|" << std::setprecision(3) << std::setw(18) << (float)profile.data[4] / i / 1000.f <<
-        "|" << std::setprecision(3) << std::setw(18) << (float)profile.data[5] / i / 1000.f << 
+        "|" << std::setprecision(3) << std::setw(18) << (float)profile.data[7] / i / 1000.f <<
+        "|" << std::setprecision(3) << std::setw(18) << (float)profile.data[5] / i / 1000.f <<
+        "|" << std::setprecision(3) << std::setw(18) << (float)profile.data[8] / i / 1000.f <<
+        "|" << std::setprecision(3) << std::setw(18) << (float)profile.data[6] / i / 1000.f << 
         "|" << std::endl;
 
         int num_frames = 
