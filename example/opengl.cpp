@@ -49,7 +49,7 @@ int main(int, char**) {
     GLuint vertexbuffer;
     glGenBuffers(1, &vertexbuffer);
 
-    simulation.pre_frame = [&] (particle* particles, const simulation_parameters& params, bool, profile_data&) {
+    simulation.pre_frame = [&] (particle* particles, const simulation_parameters& params, bool) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);

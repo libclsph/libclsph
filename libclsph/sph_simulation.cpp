@@ -15,15 +15,6 @@
 
 #define CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE_AMD 64
 
-#define STEP_1 1
-#define STEP_2 2
-#define SORT_GPU_BUCKET 3
-#define SORT_GPU_COUNT 4
-#define MEMORY_TRANSFERS_SPH 5
-#define FILE_IO 6
-#define SORT_CPU 7
-#define MEMORY_TRANSFERS_SORT 8
-
 const std::string BUFFER_KERNEL_FILE_NAME = "kernels/sph.cl";
 
 cl::Device* running_device;
@@ -123,7 +114,7 @@ void sph_simulation::sort_particles(
     particle* particles,
     cl::Buffer& first_buffer, cl::Buffer& second_buffer,
     cl::Kernel& kernel_sort_count, cl::Kernel& kernel_sort,
-    cl::CommandQueue& queue, cl::Context context,
+    cl::CommandQueue& queue, cl::Context& context,
     unsigned int* cell_table) {
 
     unsigned int* count_array = new unsigned int[SORT_THREAD_COUNT * BUCKET_COUNT];
@@ -136,99 +127,74 @@ void sph_simulation::sort_particles(
     cl::Buffer* current_input_buffer = &first_buffer;
     cl::Buffer* current_output_buffer = &second_buffer;
 
-    profile(MEMORY_TRANSFERS_SORT, &profile) {
-        check_cl_error(
-            queue.enqueueWriteBuffer(*current_input_buffer, CL_TRUE, 0,
-                sizeof(particle) * parameters.particles_count, particles));
-        queue.finish();
-    }
+    check_cl_error(
+        queue.enqueueWriteBuffer(*current_input_buffer, CL_TRUE, 0,
+            sizeof(particle) * parameters.particles_count, particles));
+
 
     for(int pass_number = 0; pass_number < 4; ++pass_number) {
         for(int i = 0; i < SORT_THREAD_COUNT * BUCKET_COUNT; ++i) {
             count_array[i] = 0;
         }
 
-        profile(MEMORY_TRANSFERS_SORT, &profile) {
-            check_cl_error(
-                queue.enqueueWriteBuffer(count_buffer, CL_TRUE, 0,
-                    sizeof(unsigned int) * SORT_THREAD_COUNT * BUCKET_COUNT, count_array));
-            queue.finish();
-        }
+        check_cl_error(
+            queue.enqueueWriteBuffer(count_buffer, CL_TRUE, 0,
+                sizeof(unsigned int) * SORT_THREAD_COUNT * BUCKET_COUNT, count_array));
 
         set_kernel_args(kernel_sort_count, 
             *current_input_buffer, count_buffer, parameters, SORT_THREAD_COUNT, pass_number, RADIX_WIDTH);
 
-        profile(SORT_GPU_COUNT, &profile) {
-            check_cl_error(
-                queue.enqueueNDRangeKernel(
-                    kernel_sort_count, cl::NullRange,
-                    cl::NDRange(SORT_THREAD_COUNT), cl::NullRange));
-            queue.finish();
+        check_cl_error(
+            queue.enqueueNDRangeKernel(
+                kernel_sort_count, cl::NullRange,
+                cl::NDRange(SORT_THREAD_COUNT), cl::NullRange));
+
+        check_cl_error(
+            queue.enqueueReadBuffer(
+                count_buffer, CL_TRUE, 0,
+                sizeof(unsigned int) * SORT_THREAD_COUNT * BUCKET_COUNT,
+                count_array));
+
+        unsigned int running_count = 0;
+        for(int i = 0; i < SORT_THREAD_COUNT * BUCKET_COUNT; ++i) {
+            unsigned int tmp = count_array[i];
+            count_array[i] = running_count;
+            running_count += tmp;
         }
 
-        profile(MEMORY_TRANSFERS_SORT, &profile) {
-            check_cl_error(
-                queue.enqueueReadBuffer(
-                    count_buffer, CL_TRUE, 0,
-                    sizeof(unsigned int) * SORT_THREAD_COUNT * BUCKET_COUNT,
-                    count_array));
-            queue.finish();
-        }
-
-        profile(SORT_CPU, &profile) {
-            unsigned int running_count = 0;
-            for(int i = 0; i < SORT_THREAD_COUNT * BUCKET_COUNT; ++i) {
-                unsigned int tmp = count_array[i];
-                count_array[i] = running_count;
-                running_count += tmp;
-            }
-        }
-
-        profile(MEMORY_TRANSFERS_SORT, &profile) {
-            check_cl_error(
-                queue.enqueueWriteBuffer(count_buffer, CL_TRUE, 0,
-                    sizeof(unsigned int) * SORT_THREAD_COUNT * BUCKET_COUNT,
-                    count_array));
-            queue.finish();
-        }
+        check_cl_error(
+            queue.enqueueWriteBuffer(count_buffer, CL_TRUE, 0,
+                sizeof(unsigned int) * SORT_THREAD_COUNT * BUCKET_COUNT,
+                count_array));
 
         set_kernel_args(kernel_sort, 
             *current_input_buffer, *current_output_buffer, count_buffer, parameters, SORT_THREAD_COUNT, pass_number, RADIX_WIDTH);
 
-        profile(SORT_GPU_BUCKET, &profile) {
-            check_cl_error(
-                queue.enqueueNDRangeKernel(
-                    kernel_sort, cl::NullRange,
-                    cl::NDRange(SORT_THREAD_COUNT), cl::NullRange));
-            queue.finish();
-        }
+        check_cl_error(
+            queue.enqueueNDRangeKernel(
+                kernel_sort, cl::NullRange,
+                cl::NDRange(SORT_THREAD_COUNT), cl::NullRange));
 
         cl::Buffer* tmp = current_input_buffer;
         current_input_buffer = current_output_buffer;
         current_output_buffer = tmp;
     }
 
-    profile(MEMORY_TRANSFERS_SORT, &profile) {
-        check_cl_error(
-            queue.enqueueReadBuffer(*current_input_buffer, CL_TRUE, 0,
-                sizeof(particle) * parameters.particles_count,
-                particles));
-        queue.finish();
-    }
+    check_cl_error(
+        queue.enqueueReadBuffer(*current_input_buffer, CL_TRUE, 0,
+            sizeof(particle) * parameters.particles_count,
+            particles));
 
     delete[] count_array;
 
     //-----------------------------------------------------
     // Build the cell_table 
     //-----------------------------------------------------
-
-    profile(SORT_CPU, &profile) {
-        unsigned int current_index = 0;
-        for(unsigned int i = 0; i < parameters.grid_cell_count; ++i) {
-            cell_table[i] = current_index;
-            while(current_index != parameters.particles_count && particles[current_index].grid_index == i) {
-                current_index++;
-            }
+    unsigned int current_index = 0;
+    for(unsigned int i = 0; i < parameters.grid_cell_count; ++i) {
+        cell_table[i] = current_index;
+        while(current_index != parameters.particles_count && particles[current_index].grid_index == i) {
+            current_index++;
         }
     }
 
@@ -240,7 +206,7 @@ void sph_simulation::simulate_single_frame(
     cl::Kernel& kernel_locate_in_grid, cl::Kernel& kernel_step_1,
     cl::Kernel& kernel_step_2, 
     cl::Kernel& kernel_sort_count, cl::Kernel& kernel_sort,
-    cl::CommandQueue& queue, cl::Context context) {
+    cl::CommandQueue& queue, cl::Context& context) {
 
     //-----------------------------------------------------
     // Calculate the optimal size for workgroups
@@ -263,13 +229,10 @@ void sph_simulation::simulate_single_frame(
     // Initial transfer to the GPU
     //-----------------------------------------------------
 
-    profile(MEMORY_TRANSFERS_SPH, &profile) {
-        check_cl_error(
-            queue.enqueueWriteBuffer(
-                input_buffer, CL_TRUE, 0,
-                sizeof(particle) * parameters.particles_count, in_particles));
-            queue.finish();
-    }
+    check_cl_error(
+        queue.enqueueWriteBuffer(
+            input_buffer, CL_TRUE, 0,
+            sizeof(particle) * parameters.particles_count, in_particles));
 
     //-----------------------------------------------------
     // Recalculate the boundaries of the grid
@@ -318,15 +281,12 @@ void sph_simulation::simulate_single_frame(
             kernel_locate_in_grid, cl::NullRange,
             cl::NDRange(parameters.particles_count), cl::NDRange(size_of_groups)));
 
-    profile(MEMORY_TRANSFERS_SPH, &profile) {
-        check_cl_error(
-            queue.enqueueReadBuffer(
-                output_buffer,
-                CL_TRUE, 0,
-                sizeof(particle) * parameters.particles_count,
-                out_particles));
-            queue.finish();
-    }
+    check_cl_error(
+        queue.enqueueReadBuffer(
+            output_buffer,
+            CL_TRUE, 0,
+            sizeof(particle) * parameters.particles_count,
+            out_particles));
 
     sort_particles(
         out_particles,
@@ -340,18 +300,15 @@ void sph_simulation::simulate_single_frame(
         CL_MEM_READ_WRITE |  CL_MEM_ALLOC_HOST_PTR ,  
         sizeof(unsigned int) * parameters.grid_cell_count);
     
-    profile(MEMORY_TRANSFERS_SPH, &profile) {
-        check_cl_error(
-            queue.enqueueWriteBuffer(
-                cell_table_buffer, CL_TRUE, 0,
-                sizeof(unsigned int) * parameters.grid_cell_count, cell_table));
+    check_cl_error(
+        queue.enqueueWriteBuffer(
+            cell_table_buffer, CL_TRUE, 0,
+            sizeof(unsigned int) * parameters.grid_cell_count, cell_table));
 
-        check_cl_error(
-            queue.enqueueWriteBuffer(
-                input_buffer, CL_TRUE, 0,
-                sizeof(particle) * parameters.particles_count, out_particles));
-        queue.finish();
-    }
+    check_cl_error(
+        queue.enqueueWriteBuffer(
+            input_buffer, CL_TRUE, 0,
+            sizeof(particle) * parameters.particles_count, out_particles));
 
     //-----------------------------------------------------
     // step_1
@@ -363,13 +320,10 @@ void sph_simulation::simulate_single_frame(
     check_cl_error(kernel_step_1.setArg(4, precomputed_terms));
     check_cl_error(kernel_step_1.setArg(5, cell_table_buffer));
 
-    profile(STEP_1, &profile) {
-        check_cl_error(
-            queue.enqueueNDRangeKernel(
-                kernel_step_1, cl::NullRange,
-                cl::NDRange(parameters.particles_count), cl::NDRange(size_of_groups)));
-        queue.finish();
-    }
+    check_cl_error(
+        queue.enqueueNDRangeKernel(
+            kernel_step_1, cl::NullRange,
+            cl::NDRange(parameters.particles_count), cl::NDRange(size_of_groups)));
 
     //-----------------------------------------------------
     // step_2
@@ -378,24 +332,20 @@ void sph_simulation::simulate_single_frame(
     cl::Buffer vertices_buffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, sizeof(float) * current_scene.vertices.size());
     cl::Buffer indices_buffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, sizeof(unsigned int) * current_scene.indices.size());
 
-    profile(MEMORY_TRANSFERS_SPH, &profile) {
-        check_cl_error(
-            queue.enqueueWriteBuffer(
-                face_normals_buffer, CL_TRUE, 0,
-                sizeof(float) * current_scene.face_normals.size(), current_scene.face_normals.data()));
+    check_cl_error(
+        queue.enqueueWriteBuffer(
+            face_normals_buffer, CL_TRUE, 0,
+            sizeof(float) * current_scene.face_normals.size(), current_scene.face_normals.data()));
 
-        check_cl_error(
-            queue.enqueueWriteBuffer(
-                vertices_buffer, CL_TRUE, 0,
-                sizeof(float) * current_scene.vertices.size(), current_scene.vertices.data()));
+    check_cl_error(
+        queue.enqueueWriteBuffer(
+            vertices_buffer, CL_TRUE, 0,
+            sizeof(float) * current_scene.vertices.size(), current_scene.vertices.data()));
 
-        check_cl_error(
-            queue.enqueueWriteBuffer(
-                indices_buffer, CL_TRUE, 0,
-                sizeof(unsigned int) * current_scene.indices.size(), current_scene.indices.data()));
-
-        queue.finish();
-    }
+    check_cl_error(
+        queue.enqueueWriteBuffer(
+            indices_buffer, CL_TRUE, 0,
+            sizeof(unsigned int) * current_scene.indices.size(), current_scene.indices.data()));
 
     check_cl_error(kernel_step_2.setArg(0, output_buffer));
     check_cl_error(kernel_step_2.setArg(1, input_buffer));
@@ -407,21 +357,15 @@ void sph_simulation::simulate_single_frame(
     check_cl_error(kernel_step_2.setArg(7, indices_buffer));
     check_cl_error(kernel_step_2.setArg(8, current_scene.face_count));
 
-    profile(STEP_2, &profile) {
-        check_cl_error(
-            queue.enqueueNDRangeKernel(
-                kernel_step_2, cl::NullRange,
-                cl::NDRange(parameters.particles_count), cl::NDRange(size_of_groups)));
-        queue.finish();
-    }
+    check_cl_error(
+        queue.enqueueNDRangeKernel(
+            kernel_step_2, cl::NullRange,
+            cl::NDRange(parameters.particles_count), cl::NDRange(size_of_groups)));
 
-    profile(MEMORY_TRANSFERS_SPH, &profile) {
-        check_cl_error(
-            queue.enqueueReadBuffer(
-                input_buffer, CL_TRUE, 0,
-                sizeof(particle) * parameters.particles_count, out_particles));
-        queue.finish();
-    }
+    check_cl_error(
+        queue.enqueueReadBuffer(
+            input_buffer, CL_TRUE, 0,
+            sizeof(particle) * parameters.particles_count, out_particles));
 
     delete[] cell_table;
 }
@@ -462,11 +406,11 @@ void sph_simulation::simulate(int frame_count) {
 
     for(int i = 0; i < frame_count; ++i) {
         if(pre_frame)  {
-            pre_frame(particles, parameters, true, profile);
+            pre_frame(particles, parameters, true);
         }
 
         for(int j = 0; (float)j < (1.f / parameters.simulation_scale); ++j) {
-            if(pre_frame) pre_frame(particles, parameters, false, profile);
+            if(pre_frame) pre_frame(particles, parameters, false);
 
             simulate_single_frame(
                 particles, particles,
@@ -475,11 +419,11 @@ void sph_simulation::simulate(int frame_count) {
                 kernel_sort_count, kernel_sort,
                 queue, context);
 
-            if(post_frame) post_frame(particles, parameters, false, profile);
+            if(post_frame) post_frame(particles, parameters, false);
         }
 
         if(post_frame) {
-            post_frame(particles, parameters, true, profile);
+            post_frame(particles, parameters, true);
         }
     }
     delete[] particles;
