@@ -127,11 +127,6 @@ void sph_simulation::sort_particles(
     cl::Buffer* current_input_buffer = &first_buffer;
     cl::Buffer* current_output_buffer = &second_buffer;
 
-    check_cl_error(
-        queue.enqueueWriteBuffer(*current_input_buffer, CL_TRUE, 0,
-            sizeof(particle) * parameters.particles_count, particles));
-
-
     for(int pass_number = 0; pass_number < 4; ++pass_number) {
         for(int i = 0; i < SORT_THREAD_COUNT * BUCKET_COUNT; ++i) {
             count_array[i] = 0;
@@ -290,7 +285,7 @@ void sph_simulation::simulate_single_frame(
 
     sort_particles(
         out_particles,
-        input_buffer, output_buffer,
+        output_buffer, input_buffer,
         kernel_sort_count, kernel_sort,
         queue, context,
         cell_table);
