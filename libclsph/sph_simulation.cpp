@@ -128,13 +128,10 @@ void sph_simulation::sort_particles(
     cl::Buffer* current_output_buffer = &second_buffer;
 
     for(int pass_number = 0; pass_number < 4; ++pass_number) {
-        for(int i = 0; i < SORT_THREAD_COUNT * BUCKET_COUNT; ++i) {
-            count_array[i] = 0;
-        }
-
+        unsigned int zero = 0;
         check_cl_error(
-            queue.enqueueWriteBuffer(count_buffer, CL_TRUE, 0,
-                sizeof(unsigned int) * SORT_THREAD_COUNT * BUCKET_COUNT, count_array));
+            queue.enqueueFillBuffer(count_buffer, zero, 0, 
+                SORT_THREAD_COUNT * BUCKET_COUNT * sizeof(int)));
 
         set_kernel_args(kernel_sort_count, 
             *current_input_buffer, count_buffer, parameters, SORT_THREAD_COUNT, pass_number, RADIX_WIDTH);
