@@ -17,3 +17,10 @@
 *.config
 *.directory
 bin/
+examples/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.cbp
+include/
