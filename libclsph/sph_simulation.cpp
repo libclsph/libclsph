@@ -21,7 +21,7 @@ cl::Device* running_device;
 
 cl::Kernel make_kernel(cl::Program& p, const char* name) {
 
-    cl_int cl_error; 
+    cl_int cl_error;
     cl::Kernel k = cl::Kernel(p, name, &cl_error);
     check_cl_error(cl_error);
 
@@ -86,9 +86,6 @@ void sph_simulation::init_particles(particle* buffer , const simulation_paramete
             buffer[i].intermediate_velocity.s[0] = 0.f;
             buffer[i].intermediate_velocity.s[1] = 0.f;
             buffer[i].intermediate_velocity.s[2] = 0.f;
-            buffer[i].constant_acceleration.s[0] = parameters.constant_acceleration.s[0];
-            buffer[i].constant_acceleration.s[1] = parameters.constant_acceleration.s[1];
-            buffer[i].constant_acceleration.s[2] = parameters.constant_acceleration.s[2];
 
             buffer[i].density = 0.f;
             buffer[i].pressure = 0.f;
@@ -98,12 +95,12 @@ void sph_simulation::init_particles(particle* buffer , const simulation_paramete
 }
 
 /**
- * @brief Sorts the particles according to their grid index using Radix Sort 
+ * @brief Sorts the particles according to their grid index using Radix Sort
  *
- * @param[in,out] particles      The array that contains the actual particle data        
+ * @param[in,out] particles      The array that contains the actual particle data
  * @param[in] first_buffer       The first OpenCL buffer used
  * @param[in] second_buffer      The second OpenCL buffer used
- * @param[in] kernel_sort_count  The kernel that builds the Radix Sort counts on the GPU 
+ * @param[in] kernel_sort_count  The kernel that builds the Radix Sort counts on the GPU
  * @param[in] kernel_sort        The kernel that does the actual sorting on the GPU
  * @param[in] queue              The OpenCL queue
  * @param[in] context            The OpenCL context
@@ -120,8 +117,8 @@ void sph_simulation::sort_particles(
     unsigned int* count_array = new unsigned int[SORT_THREAD_COUNT * BUCKET_COUNT];
 
     cl::Buffer count_buffer(
-        context,  
-        CL_MEM_READ_WRITE |  CL_MEM_ALLOC_HOST_PTR ,  
+        context,
+        CL_MEM_READ_WRITE |  CL_MEM_ALLOC_HOST_PTR ,
         sizeof(unsigned int) * SORT_THREAD_COUNT * BUCKET_COUNT);
 
     cl::Buffer* current_input_buffer = &first_buffer;
@@ -130,10 +127,10 @@ void sph_simulation::sort_particles(
     for(int pass_number = 0; pass_number < 4; ++pass_number) {
         unsigned int zero = 0;
         check_cl_error(
-            queue.enqueueFillBuffer(count_buffer, zero, 0, 
+            queue.enqueueFillBuffer(count_buffer, zero, 0,
                 SORT_THREAD_COUNT * BUCKET_COUNT * sizeof(int)));
 
-        set_kernel_args(kernel_sort_count, 
+        set_kernel_args(kernel_sort_count,
             *current_input_buffer, count_buffer, parameters, SORT_THREAD_COUNT, pass_number, RADIX_WIDTH);
 
         check_cl_error(
@@ -159,7 +156,7 @@ void sph_simulation::sort_particles(
                 sizeof(unsigned int) * SORT_THREAD_COUNT * BUCKET_COUNT,
                 count_array));
 
-        set_kernel_args(kernel_sort, 
+        set_kernel_args(kernel_sort,
             *current_input_buffer, *current_output_buffer, count_buffer, parameters, SORT_THREAD_COUNT, pass_number, RADIX_WIDTH);
 
         check_cl_error(
@@ -180,7 +177,7 @@ void sph_simulation::sort_particles(
     delete[] count_array;
 
     //-----------------------------------------------------
-    // Build the cell_table 
+    // Build the cell_table
     //-----------------------------------------------------
     unsigned int current_index = 0;
     for(unsigned int i = 0; i < parameters.grid_cell_count; ++i) {
@@ -196,7 +193,7 @@ void sph_simulation::simulate_single_frame(
     particle* in_particles, particle* out_particles,
     cl::Buffer& input_buffer, cl::Buffer& output_buffer,
     cl::Kernel& kernel_locate_in_grid, cl::Kernel& kernel_step_1,
-    cl::Kernel& kernel_step_2, 
+    cl::Kernel& kernel_step_2,
     cl::Kernel& kernel_sort_count, cl::Kernel& kernel_sort,
     cl::CommandQueue& queue, cl::Context& context) {
 
@@ -248,16 +245,16 @@ void sph_simulation::simulate_single_frame(
     parameters.min_point.s[0] = min_x;
     parameters.min_point.s[1] = min_y;
     parameters.min_point.s[2] = min_z;
-    parameters.max_point.s[0] = max_x; 
-    parameters.max_point.s[1] = max_y; 
+    parameters.max_point.s[0] = max_x;
+    parameters.max_point.s[1] = max_y;
     parameters.max_point.s[2] = max_z;
 
     parameters.grid_size_x = (cl_uint)((max_x - min_x) / (parameters.h * 2)) + 1;
     parameters.grid_size_y = (cl_uint)((max_y - min_y) / (parameters.h * 2)) + 1;
     parameters.grid_size_z = (cl_uint)((max_z - min_z) / (parameters.h * 2)) + 1;
     parameters.grid_cell_count = get_grid_index_z_curve(
-        parameters.grid_size_x, 
-        parameters.grid_size_y, 
+        parameters.grid_size_x,
+        parameters.grid_size_y,
         parameters.grid_size_z);
 
     //----------------------------------------------------------------
@@ -288,10 +285,10 @@ void sph_simulation::simulate_single_frame(
         cell_table);
 
     cl::Buffer cell_table_buffer(
-        context,  
-        CL_MEM_READ_WRITE |  CL_MEM_ALLOC_HOST_PTR ,  
+        context,
+        CL_MEM_READ_WRITE |  CL_MEM_ALLOC_HOST_PTR ,
         sizeof(unsigned int) * parameters.grid_cell_count);
-    
+
     check_cl_error(
         queue.enqueueWriteBuffer(
             cell_table_buffer, CL_TRUE, 0,
@@ -367,7 +364,7 @@ void sph_simulation::simulate(int frame_count) {
         frame_count = (int)ceil(parameters.simulation_time * parameters.target_fps);
     }
 
-    cl_int cl_error; 
+    cl_int cl_error;
 
     cl::Context context;
     std::vector<cl::Device> device_array;
@@ -470,9 +467,9 @@ void sph_simulation::load_settings(std::string fluid_file_name, std::string para
     parameters.total_mass = parameters.particles_count * parameters.particle_mass;
     initial_volume = parameters.total_mass / parameters.fluid_density;
     parameters.h = cbrtf(
-        3.f * 
-        (particles_inside_influence_radius * 
-            (initial_volume / parameters.particles_count)) / 
+        3.f *
+        (particles_inside_influence_radius *
+            (initial_volume / parameters.particles_count)) /
         (4.f * M_PI));
     parameters.time_delta = 1.f / parameters.target_fps;
 

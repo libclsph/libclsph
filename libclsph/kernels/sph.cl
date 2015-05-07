@@ -23,9 +23,9 @@ void kernel step_1(
     /* First let's copy the data we'll use to local memory */
     event_t e = async_work_group_copy ((__local char*)local_data, (__global const char*)input_data + (group_index*group_size*(sizeof(particle)/sizeof(char))), group_size*(sizeof(particle)/sizeof(char)) , 0);
     wait_group_events (1, &e);
-    
+
     particle current_particle = local_data[index_in_group];
-    
+
     current_particle.density = compute_density_with_grid(current_particle_index, input_data, params, smoothing_terms, cell_table);
 
     output_data[current_particle_index] = current_particle;
@@ -54,7 +54,7 @@ void kernel step_2(
         compute_internal_forces_with_grid(current_particle_index, input_data, params, smoothing_terms, cell_table) /
         input_data[current_particle_index].density;
 
-    acceleration += input_data[current_particle_index].constant_acceleration;
+    acceleration += params.constant_acceleration;
 
     float time_to_go = params.time_delta * params.simulation_scale;
     collision_response response;
@@ -63,16 +63,16 @@ void kernel step_2(
 
     do {
         advection_result res = advect(
-            current_position, 
+            current_position,
             current_velocity,
             acceleration,
             params.max_velocity, time_to_go);
 
         response = handle_collisions(
-            res.old_position, 
-            res.new_position, 
-            res.next_velocity, 
-            params.restitution, time_to_go, 
+            res.old_position,
+            res.new_position,
+            res.next_velocity,
+            params.restitution, time_to_go,
             face_normals,
             vertices,
             indices,
