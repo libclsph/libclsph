@@ -81,8 +81,8 @@ int main(int, char**) {
     //-----------------------------------------------------
     // Create shader program
     //-----------------------------------------------------
-    GLuint vertexShader = compile_shader("../shaders/vert.glsl",GL_VERTEX_SHADER);
-    GLuint fragmentShader = compile_shader("../shaders/frag.glsl",GL_FRAGMENT_SHADER);
+    GLuint vertexShader = compile_shader("shaders/vert.glsl",GL_VERTEX_SHADER);
+    GLuint fragmentShader = compile_shader("shaders/frag.glsl",GL_FRAGMENT_SHADER);
 
     GLuint shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram,vertexShader);
@@ -106,9 +106,9 @@ int main(int, char**) {
 
         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
         glBufferData(
-            GL_ARRAY_BUFFER, 
-            params.particles_count * sizeof(particle), 
-            particles, 
+            GL_ARRAY_BUFFER,
+            params.particles_count * sizeof(particle),
+            particles,
             GL_DYNAMIC_DRAW);
 
         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);

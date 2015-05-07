@@ -20,8 +20,9 @@ file(COPY libclsph/common DESTINATION ${PROJECT_BINARY_DIR}/include/clsph)
 file(COPY libclsph/file_save_delegates/houdini_file_saver.h DESTINATION ${PROJECT_BINARY_DIR}/include/clsph/file_save_delegates)
 file(COPY util DESTINATION ${PROJECT_BINARY_DIR}/include/clsph)
 
-# Copy kernels and properties files
+# Copy kernels, shader and properties files
 file(COPY libclsph/kernels DESTINATION ${PROJECT_BINARY_DIR}/examples)
+file(COPY shaders DESTINATION ${PROJECT_BINARY_DIR}/examples)
 file(COPY simulation_properties DESTINATION ${PROJECT_BINARY_DIR}/examples)
 file(COPY scenes DESTINATION ${PROJECT_BINARY_DIR}/examples)
 file(COPY fluid_properties DESTINATION ${PROJECT_BINARY_DIR}/examples)
@@ -30,7 +31,7 @@ file(COPY libclsph/common DESTINATION ${PROJECT_BINARY_DIR}/examples)
 include_directories(${PROJECT_BINARY_DIR}/include/clsph)
 
 # Build the main lib
-add_library(clsph 
+add_library(clsph
     libclsph/sph_simulation.cpp
     libclsph/file_save_delegates/houdini_file_saver.cpp
     util/cl_boilerplate.cpp
@@ -63,7 +64,7 @@ if(BUILD_EXAMPLES)
 
         add_executable(clsphopengl example/opengl.cpp)
         set_target_properties(clsphopengl PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/examples)
-        
+
         target_link_libraries(clsphopengl clsph)
         target_link_libraries(clsph ${OPENGL_LIBRARIES})
         target_link_libraries(clsph ${GLEW_LIBRARIES})
