@@ -11,17 +11,17 @@ advection_result advect(float3 current_position, float3 intermediate_velocity, f
 	res.old_position = current_position;
 
 	//Leapfrog
-    res.next_velocity =
-        intermediate_velocity +
-        acceleration * time_elapsed;
+  res.next_velocity =
+      intermediate_velocity +
+      acceleration * time_elapsed;
 
-    if(length(res.next_velocity) > max_velocity) {
-        res.next_velocity = normalize(res.next_velocity) * max_velocity;
-    }
+  if(length(res.next_velocity) > max_velocity) {
+      res.next_velocity = normalize(res.next_velocity) * max_velocity;
+  }
 
-    res.new_position =
-        current_position +
-        res.next_velocity * time_elapsed;
+  res.new_position =
+      current_position +
+      res.next_velocity * time_elapsed;
 
     return res;
 }

@@ -5,16 +5,14 @@ in vec3 position;
 in float density;
 
 uniform float base_density;
+uniform mat4 model_view_projection;
 
 void main() {
-    
-   if(density > base_density){
-    color=vec3(0.0,1.0,0.0);
-   }
-   else{
-    color=vec3(1.0,0.0,0.0);
-   }
-   
-   
-   gl_Position = vec4(position, 1.0);
+  float minimum = base_density * 0.5f;
+  float maximum = base_density * 1.5f;
+
+  color = vec3(1.f - ((density - base_density) / base_density),
+               ((density - base_density) / base_density), 0.f);
+
+   gl_Position = model_view_projection * vec4(position, 1.0);
 }
