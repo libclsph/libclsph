@@ -190,7 +190,7 @@ void sph_simulation::sort_particles(
 void sph_simulation::simulate_single_frame(
     particle* in_particles, particle* out_particles, cl::Buffer& input_buffer,
     cl::Buffer& output_buffer, cl::Kernel& kernel_locate_in_grid,
-    cl::Kernel& kernel_step_1, cl::Kernel& kernel_step_2,
+    cl::Kernel& kernel_density_pressure, cl::Kernel& kernel_forces_advection_collision,
     cl::Kernel& kernel_sort_count, cl::Kernel& kernel_sort,
     cl::CommandQueue& queue, cl::Context& context) {
   //-----------------------------------------------------
@@ -288,23 +288,23 @@ void sph_simulation::simulate_single_frame(
       out_particles));
 
   //-----------------------------------------------------
-  // step_1
+  // density_pressure
   //-----------------------------------------------------
-  check_cl_error(kernel_step_1.setArg(0, input_buffer));
+  check_cl_error(kernel_density_pressure.setArg(0, input_buffer));
   check_cl_error(
-      kernel_step_1.setArg(1, size_of_groups * sizeof(particle),
+      kernel_density_pressure.setArg(1, size_of_groups * sizeof(particle),
                            NULL));  // Declare local memory in arguments
-  check_cl_error(kernel_step_1.setArg(2, output_buffer));
-  check_cl_error(kernel_step_1.setArg(3, parameters));
-  check_cl_error(kernel_step_1.setArg(4, precomputed_terms));
-  check_cl_error(kernel_step_1.setArg(5, cell_table_buffer));
+  check_cl_error(kernel_density_pressure.setArg(2, output_buffer));
+  check_cl_error(kernel_density_pressure.setArg(3, parameters));
+  check_cl_error(kernel_density_pressure.setArg(4, precomputed_terms));
+  check_cl_error(kernel_density_pressure.setArg(5, cell_table_buffer));
 
   check_cl_error(queue.enqueueNDRangeKernel(
-      kernel_step_1, cl::NullRange, cl::NDRange(parameters.particles_count),
+      kernel_density_pressure, cl::NullRange, cl::NDRange(parameters.particles_count),
       cl::NDRange(size_of_groups)));
 
   //-----------------------------------------------------
-  // step_2
+  // forces_advection_collision
   //-----------------------------------------------------
   cl::Buffer face_normals_buffer(
       context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
@@ -330,18 +330,18 @@ void sph_simulation::simulate_single_frame(
       sizeof(unsigned int) * current_scene.indices.size(),
       current_scene.indices.data()));
 
-  check_cl_error(kernel_step_2.setArg(0, output_buffer));
-  check_cl_error(kernel_step_2.setArg(1, input_buffer));
-  check_cl_error(kernel_step_2.setArg(2, parameters));
-  check_cl_error(kernel_step_2.setArg(3, precomputed_terms));
-  check_cl_error(kernel_step_2.setArg(4, cell_table_buffer));
-  check_cl_error(kernel_step_2.setArg(5, face_normals_buffer));
-  check_cl_error(kernel_step_2.setArg(6, vertices_buffer));
-  check_cl_error(kernel_step_2.setArg(7, indices_buffer));
-  check_cl_error(kernel_step_2.setArg(8, current_scene.face_count));
+  check_cl_error(kernel_forces_advection_collision.setArg(0, output_buffer));
+  check_cl_error(kernel_forces_advection_collision.setArg(1, input_buffer));
+  check_cl_error(kernel_forces_advection_collision.setArg(2, parameters));
+  check_cl_error(kernel_forces_advection_collision.setArg(3, precomputed_terms));
+  check_cl_error(kernel_forces_advection_collision.setArg(4, cell_table_buffer));
+  check_cl_error(kernel_forces_advection_collision.setArg(5, face_normals_buffer));
+  check_cl_error(kernel_forces_advection_collision.setArg(6, vertices_buffer));
+  check_cl_error(kernel_forces_advection_collision.setArg(7, indices_buffer));
+  check_cl_error(kernel_forces_advection_collision.setArg(8, current_scene.face_count));
 
   check_cl_error(queue.enqueueNDRangeKernel(
-      kernel_step_2, cl::NullRange, cl::NDRange(parameters.particles_count),
+      kernel_forces_advection_collision, cl::NullRange, cl::NDRange(parameters.particles_count),
       cl::NDRange(size_of_groups)));
 
   check_cl_error(queue.enqueueReadBuffer(
@@ -372,8 +372,8 @@ void sph_simulation::simulate(int frame_count) {
   check_cl_error(make_program(&program, context, device_array, source, true,
                               "-I ./kernels/ -I ./common/"));
 
-  cl::Kernel kernel_step_1 = make_kernel(program, "step_1");
-  cl::Kernel kernel_step_2 = make_kernel(program, "step_2");
+  cl::Kernel kernel_density_pressure = make_kernel(program, "density_pressure");
+  cl::Kernel kernel_forces_advection_collision = make_kernel(program, "forces_advection_collision");
   cl::Kernel kernel_locate_in_grid = make_kernel(program, "locate_in_grid");
   cl::Kernel kernel_sort_count = make_kernel(program, "sort_count");
   cl::Kernel kernel_sort = make_kernel(program, "sort");
@@ -397,7 +397,8 @@ void sph_simulation::simulate(int frame_count) {
       if (pre_frame) pre_frame(particles, parameters, false);
 
       simulate_single_frame(particles, particles, input_buffer, output_buffer,
-                            kernel_locate_in_grid, kernel_step_1, kernel_step_2,
+                            kernel_locate_in_grid, kernel_density_pressure, 
+                            kernel_forces_advection_collision,
                             kernel_sort_count, kernel_sort, queue, context);
 
       if (post_frame) post_frame(particles, parameters, false);

@@ -6,7 +6,7 @@
 #include "sort.cl"
 #include "advection.cl"
 
-void kernel step_1(
+void kernel density_pressure(
     global const particle* input_data,
     __local particle* local_data,
     global particle* output_data,
@@ -35,7 +35,7 @@ void kernel step_1(
         params.K * (pown(current_particle.density / params.fluid_density, 7) - 1.f);
 }
 
-void kernel step_2(
+void kernel forces_advection_collision(
     global const particle* input_data,
     global particle* output_data,
     const simulation_parameters params,
@@ -47,6 +47,7 @@ void kernel step_2(
     uint face_count) {
 
     const size_t current_particle_index = get_global_id(0);
+
 
     output_data[current_particle_index] = input_data[current_particle_index];
 
