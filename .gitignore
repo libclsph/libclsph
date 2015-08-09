@@ -25,3 +25,4 @@ Makefile
 *.cbp
 include/
 out/
+.idea

@@ -6,41 +6,35 @@
 #include "scene.h"
 
 class sph_simulation {
-public:
-	sph_simulation() :
-		parameters(),
-		write_intermediate_frames(false) { }
+ public:
+  sph_simulation() : parameters(), write_intermediate_frames(false) {}
 
-	void simulate(int frame_count = 0);
+  void simulate(int frame_count = 0);
 
-	simulation_parameters parameters;
-	precomputed_kernel_values precomputed_terms;
+  simulation_parameters parameters;
+  precomputed_kernel_values precomputed_terms;
 
-	std::function<void(particle*, const simulation_parameters&, bool)> pre_frame;
-	std::function<void(particle*, const simulation_parameters&, bool)> post_frame;
+  std::function<void(particle*, const simulation_parameters&, bool)> pre_frame;
+  std::function<void(particle*, const simulation_parameters&, bool)> post_frame;
 
-	void load_settings(std::string fluid_file_name, std::string parameters_file_name);
+  void load_settings(std::string fluid_file_name,
+                     std::string parameters_file_name);
 
-	bool write_intermediate_frames;
-    bool serialize;
-	float initial_volume;
-	scene current_scene;
+  bool write_intermediate_frames;
+  bool serialize;
+  float initial_volume;
+  scene current_scene;
 
-private:
-    void init_particles(particle* buffer,const simulation_parameters&);
+ private:
+  void init_particles(particle* buffer, const simulation_parameters&);
 
-	void sort_particles(
-		particle*,
-	    cl::Buffer&, cl::Buffer&,
-	    cl::Kernel&, cl::Kernel&,
-	    cl::CommandQueue&, cl::Context&,
-	    unsigned int*);
+  void sort_particles(particle*, cl::Buffer&, cl::Buffer&, cl::Kernel&,
+                      cl::Kernel&, cl::CommandQueue&, cl::Context&,
+                      unsigned int*);
 
-	void simulate_single_frame(
-		particle*, particle*,
-	    cl::Buffer&, cl::Buffer&,
-        cl::Kernel&, cl::Kernel&, cl::Kernel&, cl::Kernel&,
-	    cl::Kernel&, cl::CommandQueue&, cl::Context&);
+  void simulate_single_frame(particle*, particle*, cl::Buffer&, cl::Buffer&,
+                             cl::Kernel&, cl::Kernel&, cl::Kernel&, cl::Kernel&,
+                             cl::Kernel&, cl::CommandQueue&, cl::Context&);
 };
 
 #endif

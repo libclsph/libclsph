@@ -6,17 +6,17 @@
 #include "common/structures.h"
 
 class houdini_file_saver {
-public:
-	houdini_file_saver(std::string frames_folder_prefix) : 
-		frames_folder_prefix(frames_folder_prefix),
-		frame_count(0) { }
+ public:
+  houdini_file_saver(std::string frames_folder_prefix)
+      : frames_folder_prefix(frames_folder_prefix), frame_count(0) {}
 
-	int writeFrameToFile(particle* particles, const simulation_parameters& parameters);
+  int writeFrameToFile(particle* particles,
+                       const simulation_parameters& parameters);
 
-	std::string frames_folder_prefix;
+  std::string frames_folder_prefix;
 
-private:
-	int frame_count;
+ private:
+  int frame_count;
 };
 
 #endif
