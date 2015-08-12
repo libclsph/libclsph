@@ -33,7 +33,8 @@ class sph_simulation {
                       unsigned int*);
 
   void simulate_single_frame(particle*, particle*, cl::Buffer&, cl::Buffer&,
-                             cl::Kernel&, cl::Kernel&, cl::Kernel&, cl::Kernel&,
+                             cl::Kernel&, cl::Kernel&,cl::Kernel& ,
+                             cl::Kernel&, cl::Kernel&,
                              cl::Kernel&, cl::CommandQueue&, cl::Context&);
 };
 

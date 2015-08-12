@@ -35,7 +35,31 @@ void kernel density_pressure(
         params.K * (pown(current_particle.density / params.fluid_density, 7) - 1.f);
 }
 
-void kernel forces_advection_collision(
+void kernel forces(
+    global const particle* input_data,
+    global particle* output_data,
+    const simulation_parameters params,
+    const precomputed_kernel_values smoothing_terms,
+    global const unsigned int* cell_table
+    ) {
+
+    const size_t current_particle_index = get_global_id(0);
+
+    particle output_particle;
+
+    output_data[current_particle_index] = input_data[current_particle_index];
+
+    output_particle.acceleration =
+        compute_internal_forces_with_grid(current_particle_index, input_data, params, smoothing_terms, cell_table) /
+        input_data[current_particle_index].density;
+
+    output_particle.acceleration+= params.constant_acceleration;
+
+    //Copy back the information into the ouput buffer
+    output_data[current_particle_index] = output_particle;
+}
+
+void kernel advection_collision(
     global const particle* input_data,
     global particle* output_data,
     const simulation_parameters params,
@@ -47,15 +71,8 @@ void kernel forces_advection_collision(
     uint face_count) {
 
     const size_t current_particle_index = get_global_id(0);
-
-
     output_data[current_particle_index] = input_data[current_particle_index];
-
-    float3 acceleration =
-        compute_internal_forces_with_grid(current_particle_index, input_data, params, smoothing_terms, cell_table) /
-        input_data[current_particle_index].density;
-
-    acceleration += params.constant_acceleration;
+    particle output_particle = input_data[current_particle_index];
 
     float time_to_go = params.time_delta * params.simulation_scale;
     collision_response response;
@@ -66,7 +83,7 @@ void kernel forces_advection_collision(
         advection_result res = advect(
             current_position,
             current_velocity,
-            acceleration,
+            output_particle.acceleration,
             params.max_velocity, time_to_go);
 
         response = handle_collisions(
@@ -84,15 +101,17 @@ void kernel forces_advection_collision(
 
         time_to_go -= response.time_elapsed;
 
-        acceleration.x = 0.f;
-        acceleration.y = 0.f;
-        acceleration.z = 0.f;
+        output_particle.acceleration.x = 0.f;
+        output_particle.acceleration.y = 0.f;
+        output_particle.acceleration.z = 0.f;
 
     } while(response.collision_happened);
 
-    output_data[current_particle_index].velocity =
+    output_particle.velocity =
         (input_data[current_particle_index].intermediate_velocity + response.next_velocity) / 2.f;
-    output_data[current_particle_index].intermediate_velocity = response.next_velocity;
-    output_data[current_particle_index].position = response.position;
+    output_particle.intermediate_velocity = response.next_velocity;
+    output_particle.position = response.position;
 
+    //Copy back the information into the ouput buffer
+    output_data[current_particle_index] = output_particle;
 }
