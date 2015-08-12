@@ -153,6 +153,10 @@ int main(int, char**) {
         glDisableVertexAttribArray(0);
         glfwSwapBuffers(window);
         glfwPollEvents();
+
+        if (glfwWindowShouldClose(window)) {
+          std::exit(0);
+        }
     };
 
     if(!simulation.current_scene.load("labyrinth.obj")) {
