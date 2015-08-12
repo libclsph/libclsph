@@ -154,7 +154,7 @@ int main(int, char**) {
         glfwSwapBuffers(window);
         glfwPollEvents();
 
-        if( glfwWindowShouldClose(window) ){
+        if (glfwWindowShouldClose(window)) {
           std::exit(0);
         }
     };
