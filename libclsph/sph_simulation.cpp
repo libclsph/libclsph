@@ -17,9 +17,9 @@ const size_t kPreferredWorkGroupSizeMultiple = 64;
 
 const std::string BUFFER_KERNEL_FILE_NAME = "kernels/sph.cl";
 
-cl::Device* running_device;
+cl::Device *running_device;
 
-cl::Kernel make_kernel(cl::Program& p, const char* name) {
+cl::Kernel make_kernel(cl::Program &p, const char *name) {
   cl_int cl_error;
   cl::Kernel k = cl::Kernel(p, name, &cl_error);
   check_cl_error(cl_error);
@@ -27,17 +27,17 @@ cl::Kernel make_kernel(cl::Program& p, const char* name) {
   return k;
 }
 
-void set_kernel_args_internal(int, cl::Kernel&) { return; }
+void set_kernel_args_internal(int, cl::Kernel &) { return; }
 
 template <typename T1, typename... TArgs>
-void set_kernel_args_internal(int index, cl::Kernel& kernel, T1 a,
+void set_kernel_args_internal(int index, cl::Kernel &kernel, T1 a,
                               TArgs... args) {
   check_cl_error(kernel.setArg(index, a));
   set_kernel_args_internal(index + 1, kernel, args...);
 }
 
 template <typename... TArgs>
-void set_kernel_args(cl::Kernel& kernel, TArgs... args) {
+void set_kernel_args(cl::Kernel &kernel, TArgs... args) {
   set_kernel_args_internal(0, kernel, args...);
 }
 
@@ -49,8 +49,8 @@ void set_kernel_args(cl::Kernel& kernel, TArgs... args) {
  * @param[in] parameters    Contains the simulation parameters
  *
  */
-void sph_simulation::init_particles(particle* buffer,
-                                    const simulation_parameters& parameters) {
+void sph_simulation::init_particles(particle *buffer,
+                                    const simulation_parameters &parameters) {
   int particles_per_cube_side = ceil(cbrtf(parameters.particles_count));
   float side_length = cbrtf(initial_volume);
   float spacing = side_length / (float)particles_per_cube_side;
@@ -115,18 +115,18 @@ void sph_simulation::init_particles(particle* buffer,
  *
  */
 void sph_simulation::sort_particles(
-    particle* particles, cl::Buffer& first_buffer, cl::Buffer& second_buffer,
-    cl::Kernel& kernel_sort_count, cl::Kernel& kernel_sort,
-    cl::CommandQueue& queue, cl::Context& context, unsigned int* cell_table) {
-  unsigned int* count_array =
+    particle *particles, cl::Buffer &first_buffer, cl::Buffer &second_buffer,
+    cl::Kernel &kernel_sort_count, cl::Kernel &kernel_sort,
+    cl::CommandQueue &queue, cl::Context &context, unsigned int *cell_table) {
+  unsigned int *count_array =
       new unsigned int[SORT_THREAD_COUNT * BUCKET_COUNT];
 
   cl::Buffer count_buffer(
       context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
       sizeof(unsigned int) * SORT_THREAD_COUNT * BUCKET_COUNT);
 
-  cl::Buffer* current_input_buffer = &first_buffer;
-  cl::Buffer* current_output_buffer = &second_buffer;
+  cl::Buffer *current_input_buffer = &first_buffer;
+  cl::Buffer *current_output_buffer = &second_buffer;
 
   for (int pass_number = 0; pass_number < 4; ++pass_number) {
     unsigned int zero = 0;
@@ -163,7 +163,7 @@ void sph_simulation::sort_particles(
                                               cl::NDRange(SORT_THREAD_COUNT),
                                               cl::NullRange));
 
-    cl::Buffer* tmp = current_input_buffer;
+    cl::Buffer *tmp = current_input_buffer;
     current_input_buffer = current_output_buffer;
     current_output_buffer = tmp;
   }
@@ -188,12 +188,11 @@ void sph_simulation::sort_particles(
 }
 
 void sph_simulation::simulate_single_frame(
-    particle* in_particles, particle* out_particles, cl::Buffer& input_buffer,
-    cl::Buffer& output_buffer, cl::Kernel& kernel_locate_in_grid,
-    cl::Kernel& kernel_density_pressure, cl::Kernel& kernel_forces,
-    cl::Kernel& kernel_advection_collision,
-    cl::Kernel& kernel_sort_count, cl::Kernel& kernel_sort,
-    cl::CommandQueue& queue, cl::Context& context) {
+    particle *in_particles, particle *out_particles, cl::Buffer &input_buffer,
+    cl::Buffer &output_buffer, cl::Kernel &kernel_locate_in_grid,
+    cl::Kernel &kernel_density_pressure, cl::Kernel &kernel_forces,
+    cl::Kernel &kernel_advection_collision, cl::Kernel &kernel_sort_count,
+    cl::Kernel &kernel_sort, cl::CommandQueue &queue, cl::Context &context) {
   //-----------------------------------------------------
   // Calculate the optimal size for workgroups
   //-----------------------------------------------------
@@ -260,7 +259,7 @@ void sph_simulation::simulate_single_frame(
   // Locate each particle in the grid and build the grid count table
   //----------------------------------------------------------------
 
-  unsigned int* cell_table = new unsigned int[parameters.grid_cell_count];
+  unsigned int *cell_table = new unsigned int[parameters.grid_cell_count];
 
   set_kernel_args(kernel_locate_in_grid, input_buffer, output_buffer,
                   parameters);
@@ -292,17 +291,17 @@ void sph_simulation::simulate_single_frame(
   // density_pressure
   //-----------------------------------------------------
   check_cl_error(kernel_density_pressure.setArg(0, input_buffer));
-  check_cl_error(
-      kernel_density_pressure.setArg(1, size_of_groups * sizeof(particle),
-                                     nullptr));  // Declare local memory in arguments
+  check_cl_error(kernel_density_pressure.setArg(
+      1, size_of_groups * sizeof(particle),
+      nullptr));  // Declare local memory in arguments
   check_cl_error(kernel_density_pressure.setArg(2, output_buffer));
   check_cl_error(kernel_density_pressure.setArg(3, parameters));
   check_cl_error(kernel_density_pressure.setArg(4, precomputed_terms));
   check_cl_error(kernel_density_pressure.setArg(5, cell_table_buffer));
 
   check_cl_error(queue.enqueueNDRangeKernel(
-      kernel_density_pressure, cl::NullRange, cl::NDRange(parameters.particles_count),
-      cl::NDRange(size_of_groups)));
+      kernel_density_pressure, cl::NullRange,
+      cl::NDRange(parameters.particles_count), cl::NDRange(size_of_groups)));
 
   //-----------------------------------------------------
   // advection_collision
@@ -331,20 +330,21 @@ void sph_simulation::simulate_single_frame(
       sizeof(unsigned int) * current_scene.indices.size(),
       current_scene.indices.data()));
 
-  set_kernel_args(kernel_forces, output_buffer,
-    input_buffer, parameters,precomputed_terms,cell_table_buffer );
+  set_kernel_args(kernel_forces, output_buffer, input_buffer, parameters,
+                  precomputed_terms, cell_table_buffer);
 
   check_cl_error(queue.enqueueNDRangeKernel(
       kernel_forces, cl::NullRange, cl::NDRange(parameters.particles_count),
       cl::NDRange(size_of_groups)));
 
-  set_kernel_args(kernel_advection_collision, input_buffer,
-    output_buffer, parameters,precomputed_terms,cell_table_buffer,
-    face_normals_buffer,vertices_buffer,indices_buffer,current_scene.face_count );
+  set_kernel_args(kernel_advection_collision, input_buffer, output_buffer,
+                  parameters, precomputed_terms, cell_table_buffer,
+                  face_normals_buffer, vertices_buffer, indices_buffer,
+                  current_scene.face_count);
 
   check_cl_error(queue.enqueueNDRangeKernel(
-      kernel_advection_collision, cl::NullRange, cl::NDRange(parameters.particles_count),
-      cl::NDRange(size_of_groups)));
+      kernel_advection_collision, cl::NullRange,
+      cl::NDRange(parameters.particles_count), cl::NDRange(size_of_groups)));
 
   check_cl_error(queue.enqueueReadBuffer(
       output_buffer, CL_TRUE, 0, sizeof(particle) * parameters.particles_count,
@@ -375,7 +375,8 @@ void sph_simulation::simulate(int frame_count) {
                               "-I ./kernels/ -I ./common/"));
 
   cl::Kernel kernel_density_pressure = make_kernel(program, "density_pressure");
-  cl::Kernel kernel_advection_collision = make_kernel(program, "advection_collision");
+  cl::Kernel kernel_advection_collision =
+      make_kernel(program, "advection_collision");
   cl::Kernel kernel_forces = make_kernel(program, "forces");
   cl::Kernel kernel_locate_in_grid = make_kernel(program, "locate_in_grid");
   cl::Kernel kernel_sort_count = make_kernel(program, "sort_count");
@@ -386,7 +387,7 @@ void sph_simulation::simulate(int frame_count) {
   cl::Buffer output_buffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
                            sizeof(particle) * parameters.particles_count);
 
-  particle* particles = new particle[parameters.particles_count];
+  particle *particles = new particle[parameters.particles_count];
   init_particles(particles, parameters);
 
   std::cout << std::endl;
@@ -401,8 +402,7 @@ void sph_simulation::simulate(int frame_count) {
 
       simulate_single_frame(particles, particles, input_buffer, output_buffer,
                             kernel_locate_in_grid, kernel_density_pressure,
-                            kernel_forces,
-                            kernel_advection_collision,
+                            kernel_forces, kernel_advection_collision,
                             kernel_sort_count, kernel_sort, queue, context);
 
       if (post_frame) post_frame(particles, parameters, false);
@@ -461,9 +461,7 @@ void sph_simulation::load_settings(std::string fluid_file_name,
         (unsigned int)(sim_params.get<picojson::object>()["particles_count"]
                            .get<double>());
 
-    if (parameters.particles_count %
-            kPreferredWorkGroupSizeMultiple !=
-        0) {
+    if (parameters.particles_count % kPreferredWorkGroupSizeMultiple != 0) {
       std::cout << std::endl
                 << "\033[1;31m You should choose a number of particles that is "
                    "divisble by the preferred work group size.\033[0m";
