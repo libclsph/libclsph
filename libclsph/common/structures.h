@@ -40,7 +40,7 @@ typedef struct {
 } simulation_parameters;
 
 typedef struct {
-  cl_float3 position, velocity, intermediate_velocity,acceleration;
+  cl_float3 position, velocity, intermediate_velocity, acceleration;
   cl_float density, pressure;
   cl_uint grid_index;
 } particle;
