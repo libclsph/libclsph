@@ -22,18 +22,9 @@ float compute_density_with_grid(
   uint3 cell_coords =
       get_cell_coords_z_curve(others[current_particle_index].grid_index);
 
-  for (uint z = cell_coords.z > 0 ? cell_coords.z - 1 : 0;
-       z <= cell_coords.z + 1; ++z) {
-    if (z >= params.grid_size_z) continue;
-
-    for (uint y = cell_coords.y > 0 ? cell_coords.y - 1 : 0;
-         y <= cell_coords.y + 1; ++y) {
-      if (y >= params.grid_size_y) continue;
-
-      for (uint x = cell_coords.x > 0 ? cell_coords.x - 1 : 0;
-           x <= cell_coords.x + 1; ++x) {
-        if (x >= params.grid_size_x) continue;
-
+  for (uint z = cell_coords.z - 1; z <= cell_coords.z + 1; ++z) {
+    for (uint y = cell_coords.y - 1; y <= cell_coords.y + 1; ++y) {
+      for (uint x = cell_coords.x - 1; x <= cell_coords.x + 1; ++x) {
         uint grid_index = get_grid_index_z_curve(x, y, z);
         uint2 indices = get_start_end_indices_for_cell(
             grid_index, grid_cell_particle_list, params);
@@ -66,16 +57,9 @@ float3 compute_internal_forces_with_grid(
   uint3 cell_coords =
       get_cell_coords_z_curve(others[current_particle_index].grid_index);
 
-  for (uint z = cell_coords.z > 0 ? cell_coords.z - 1 : 0;
-       z <= cell_coords.z + 1; ++z) {
-    if (z >= params.grid_size_z) continue;
-    for (uint y = cell_coords.y > 0 ? cell_coords.y - 1 : 0;
-         y <= cell_coords.y + 1; ++y) {
-      if (y >= params.grid_size_y) continue;
-      for (uint x = cell_coords.x > 0 ? cell_coords.x - 1 : 0;
-           x <= cell_coords.x + 1; ++x) {
-        if (x >= params.grid_size_x) continue;
-
+  for (uint z = cell_coords.z - 1; z <= cell_coords.z + 1; ++z) {
+    for (uint y = cell_coords.y - 1; y <= cell_coords.y + 1; ++y) {
+      for (uint x = cell_coords.x - 1; x <= cell_coords.x + 1; ++x) {
         uint grid_index = get_grid_index_z_curve(x, y, z);
         uint2 indices = get_start_end_indices_for_cell(
             grid_index, grid_cell_particle_list, params);

@@ -228,8 +228,11 @@ void sph_simulation::simulate_single_frame(
   //-----------------------------------------------------
 
   cl_float min_x, max_x, min_y, max_y, min_z, max_z;
+  cl_float grid_cell_side_length = (parameters.h * 2);
+
   min_x = min_y = min_z = std::numeric_limits<cl_int>::max();
   max_x = max_y = max_z = std::numeric_limits<cl_int>::min();
+
   for (size_t i = 0; i < parameters.particles_count; ++i) {
     cl_float3 pos = in_particles[i].position;
 
@@ -242,16 +245,38 @@ void sph_simulation::simulate_single_frame(
     if (pos.s[2] > max_z) max_z = pos.s[2];
   }
 
+  // Add or subtracts a cell length to all sides to create a padding layer
+  // This simplifies calculations further down the line
+  min_x -= grid_cell_side_length * 2;
+  min_y -= grid_cell_side_length * 2;
+  min_z -= grid_cell_side_length * 2;
+
+  max_x += grid_cell_side_length * 2;
+  max_y += grid_cell_side_length * 2;
+  max_z += grid_cell_side_length * 2;
+
   parameters.min_point.s[0] = min_x;
   parameters.min_point.s[1] = min_y;
   parameters.min_point.s[2] = min_z;
+
   parameters.max_point.s[0] = max_x;
   parameters.max_point.s[1] = max_y;
   parameters.max_point.s[2] = max_z;
 
-  parameters.grid_size_x = (cl_uint)((max_x - min_x) / (parameters.h * 2)) + 1;
-  parameters.grid_size_y = (cl_uint)((max_y - min_y) / (parameters.h * 2)) + 1;
-  parameters.grid_size_z = (cl_uint)((max_z - min_z) / (parameters.h * 2)) + 1;
+  parameters.grid_size_x =
+      static_cast<cl_uint>((max_x - min_x) / grid_cell_side_length);
+  parameters.grid_size_y =
+      static_cast<cl_uint>((max_y - min_y) / grid_cell_side_length);
+  parameters.grid_size_z =
+      static_cast<cl_uint>((max_z - min_z) / grid_cell_side_length);
+
+  // The Z-curve uses interleaving of bits in a uint to caculate the index.
+  // This means we have floor(32/dimension_count) bits to represent each
+  // dimension.
+  assert(parameters.grid_size_x < 1024);
+  assert(parameters.grid_size_y < 1024);
+  assert(parameters.grid_size_z < 1024);
+
   parameters.grid_cell_count = get_grid_index_z_curve(
       parameters.grid_size_x, parameters.grid_size_y, parameters.grid_size_z);
 
