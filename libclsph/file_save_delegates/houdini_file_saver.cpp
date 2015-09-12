@@ -23,12 +23,12 @@ std::string ZeroPadNumber(int num) {
 }
 
 int houdini_file_saver::writeFrameToFile(
-    particle* particles, const simulation_parameters& parameters) {
+    particle *particles, const simulation_parameters &parameters) {
 #ifndef USE_PARTIO
 
   // TODO Find a way to use the same struct for the simulation and writing to
   // file
-  houdini_Particle* houdini_Particles =
+  houdini_Particle *houdini_Particles =
       new houdini_Particle[parameters.particles_count];
 
   std::stringstream ss;
@@ -82,7 +82,7 @@ int houdini_file_saver::writeFrameToFile(
      << ".bgeo";
   std::string fileName = ss.str();
 
-  Partio::ParticlesDataMutable* data = makeData(particles, parameters);
+  Partio::ParticlesDataMutable *data = makeData(particles, parameters);
   Partio::write(fileName.c_str(), *data);
   data->release();
 

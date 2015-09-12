@@ -20,8 +20,8 @@ inline uint2 get_start_and_end(size_t particle_count, int thread_count,
 }
 
 /* size of counts = sizeof(size_t) * bucket_count * thread_count */
-void kernel sort_count(global const particle* particles,
-                       global volatile unsigned int* counts,
+void kernel sort_count(global const particle *particles,
+                       global volatile unsigned int *counts,
                        simulation_parameters params, int thread_count,
                        int pass_number, int radix_width) {
   size_t work_item_id = get_global_id(0);
@@ -38,8 +38,8 @@ void kernel sort_count(global const particle* particles,
   }
 }
 
-void kernel sort(global const particle* in_particles,
-                 global particle* out_particles, global size_t* start_indices,
+void kernel sort(global const particle *in_particles,
+                 global particle *out_particles, global size_t *start_indices,
                  simulation_parameters params, int thread_count,
                  int pass_number, int radix_width) {
   const size_t work_item_id = get_global_id(0);

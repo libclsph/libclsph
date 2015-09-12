@@ -4,7 +4,7 @@
 #include "common.cl"
 
 uint2 get_start_end_indices_for_cell(uint cell_index,
-                                     global const unsigned int* cell_table,
+                                     global const unsigned int *cell_table,
                                      simulation_parameters params);
 
 /**
@@ -20,7 +20,7 @@ uint2 get_start_end_indices_for_cell(uint cell_index,
  *
  */
 uint2 get_start_end_indices_for_cell(uint cell_index,
-                                     global const unsigned int* cell_table,
+                                     global const unsigned int *cell_table,
                                      simulation_parameters params) {
   uint2 indices = {
       cell_table[cell_index], (params.grid_cell_count > cell_index + 1)
@@ -40,8 +40,8 @@ uint2 get_start_end_indices_for_cell(uint cell_index,
  *information
  * @param[in]  params           Contains the simulation parameters
  */
-void kernel locate_in_grid(global const particle* particles,
-                           global particle* out_particles,
+void kernel locate_in_grid(global const particle *particles,
+                           global particle *out_particles,
                            simulation_parameters params) {
   const size_t current_particle_index = get_global_id(0);
   out_particles[current_particle_index] = particles[current_particle_index];

@@ -95,7 +95,7 @@ int main(int, char**) {
     //-----------------------------------------------------
 
     GLint base_density = glGetUniformLocation(shaderProgram, "base_density");
-    glUniform1f(base_density,simulation.parameters.fluid_density);
+    glUniform1f(base_density, simulation.parameters.fluid_density);
 
     //-----------------------------------------------------
     // Create lambda for preframe processing
