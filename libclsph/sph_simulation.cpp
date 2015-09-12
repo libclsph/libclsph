@@ -13,9 +13,9 @@ const size_t kPreferredWorkGroupSizeMultiple = 64;
 
 const std::string BUFFER_KERNEL_FILE_NAME = "kernels/sph.cl";
 
-cl::Device *running_device;
+cl::Device* running_device;
 
-cl::Kernel make_kernel(cl::Program &p, const char *name) {
+cl::Kernel make_kernel(cl::Program& p, const char* name) {
   cl_int cl_error;
   cl::Kernel k = cl::Kernel(p, name, &cl_error);
   check_cl_error(cl_error);
@@ -23,17 +23,17 @@ cl::Kernel make_kernel(cl::Program &p, const char *name) {
   return k;
 }
 
-void set_kernel_args_internal(int, cl::Kernel &) { return; }
+void set_kernel_args_internal(int, cl::Kernel&) { return; }
 
 template <typename T1, typename... TArgs>
-void set_kernel_args_internal(int index, cl::Kernel &kernel, T1 a,
+void set_kernel_args_internal(int index, cl::Kernel& kernel, T1 a,
                               TArgs... args) {
   check_cl_error(kernel.setArg(index, a));
   set_kernel_args_internal(index + 1, kernel, args...);
 }
 
 template <typename... TArgs>
-void set_kernel_args(cl::Kernel &kernel, TArgs... args) {
+void set_kernel_args(cl::Kernel& kernel, TArgs... args) {
   set_kernel_args_internal(0, kernel, args...);
 }
 
@@ -45,8 +45,8 @@ void set_kernel_args(cl::Kernel &kernel, TArgs... args) {
  * @param[in] parameters    Contains the simulation parameters
  *
  */
-void sph_simulation::init_particles(particle *buffer,
-                                    const simulation_parameters &parameters) {
+void sph_simulation::init_particles(particle* buffer,
+                                    const simulation_parameters& parameters) {
   int particles_per_cube_side = ceil(cbrtf(parameters.particles_count));
   float side_length = cbrtf(initial_volume);
   float spacing = side_length / (float)particles_per_cube_side;
@@ -104,12 +104,12 @@ void sph_simulation::init_particles(particle *buffer,
  *the cell in the sorted array
  *
  */
-void sph_simulation::sort_particles(particle *particles,
-                                    cl::Buffer &first_buffer,
-                                    cl::Buffer &second_buffer,
-                                    unsigned int *cell_table) {
-  cl::Buffer *current_input_buffer = &first_buffer;
-  cl::Buffer *current_output_buffer = &second_buffer;
+void sph_simulation::sort_particles(particle* particles,
+                                    cl::Buffer& first_buffer,
+                                    cl::Buffer& second_buffer,
+                                    unsigned int* cell_table) {
+  cl::Buffer* current_input_buffer = &first_buffer;
+  cl::Buffer* current_output_buffer = &second_buffer;
 
   for (int pass_number = 0; pass_number < 4; ++pass_number) {
     unsigned int zero = 0;
@@ -150,7 +150,7 @@ void sph_simulation::sort_particles(particle *particles,
                                                cl::NDRange(kSortThreadCount),
                                                cl::NullRange));
 
-    cl::Buffer *tmp = current_input_buffer;
+    cl::Buffer* tmp = current_input_buffer;
     current_input_buffer = current_output_buffer;
     current_output_buffer = tmp;
   }
@@ -170,8 +170,8 @@ void sph_simulation::sort_particles(particle *particles,
   }
 }
 
-void sph_simulation::simulate_single_frame(particle *in_particles,
-                                           particle *out_particles) {
+void sph_simulation::simulate_single_frame(particle* in_particles,
+                                           particle* out_particles) {
   // Calculate the optimal size for workgroups
 
   // Start groups size at their maximum, make them smaller if necessary
@@ -252,7 +252,7 @@ void sph_simulation::simulate_single_frame(particle *in_particles,
       parameters.grid_size_x, parameters.grid_size_y, parameters.grid_size_z);
 
   // Locate each particle in the grid and build the grid count table
-  unsigned int *cell_table = new unsigned int[parameters.grid_cell_count];
+  unsigned int* cell_table = new unsigned int[parameters.grid_cell_count];
 
   set_kernel_args(kernel_locate_in_grid_, front_buffer_, back_buffer_,
                   parameters);
@@ -379,7 +379,7 @@ void sph_simulation::simulate(int frame_count) {
       cl::Buffer(context_, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
                  sizeof(unsigned int) * kSortThreadCount * kBucketCount);
 
-  particle *particles = new particle[parameters.particles_count];
+  particle* particles = new particle[parameters.particles_count];
   init_particles(particles, parameters);
 
   for (int i = 0; i < frame_count; ++i) {

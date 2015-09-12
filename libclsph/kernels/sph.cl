@@ -6,12 +6,12 @@
 #include "sort.cl"
 #include "advection.cl"
 
-void kernel density_pressure(global const particle *input_data,
-                             __local particle *local_data,
-                             global particle *output_data,
+void kernel density_pressure(global const particle* input_data,
+                             __local particle* local_data,
+                             global particle* output_data,
                              const simulation_parameters params,
                              const precomputed_kernel_values smoothing_terms,
-                             global const unsigned int *cell_table) {
+                             global const unsigned int* cell_table) {
   /* we'll get the same amount of global_ids as there are particles */
   const size_t current_particle_index = get_global_id(0);
   const size_t group_index = get_group_id(0);
@@ -20,8 +20,8 @@ void kernel density_pressure(global const particle *input_data,
 
   /* First let's copy the data we'll use to local memory */
   event_t e = async_work_group_copy(
-      (__local char *)local_data,
-      (__global const char *)input_data +
+      (__local char*)local_data,
+      (__global const char*)input_data +
           (group_index * group_size * (sizeof(particle) / sizeof(char))),
       group_size * (sizeof(particle) / sizeof(char)), 0);
   wait_group_events(1, &e);
@@ -39,11 +39,11 @@ void kernel density_pressure(global const particle *input_data,
       (pown(current_particle.density / params.fluid_density, 7) - 1.f);
 }
 
-void kernel forces(global const particle *input_data,
-                   global particle *output_data,
+void kernel forces(global const particle* input_data,
+                   global particle* output_data,
                    const simulation_parameters params,
                    const precomputed_kernel_values smoothing_terms,
-                   global const unsigned int *cell_table) {
+                   global const unsigned int* cell_table) {
   const size_t current_particle_index = get_global_id(0);
 
   particle output_particle;
@@ -61,14 +61,14 @@ void kernel forces(global const particle *input_data,
   output_data[current_particle_index] = output_particle;
 }
 
-void kernel advection_collision(global const particle *input_data,
-                                global particle *output_data,
+void kernel advection_collision(global const particle* input_data,
+                                global particle* output_data,
                                 const simulation_parameters params,
                                 const precomputed_kernel_values smoothing_terms,
-                                global const unsigned int *cell_table,
-                                global const float *face_normals,
-                                global const float *vertices,
-                                global const uint *indices, uint face_count) {
+                                global const unsigned int* cell_table,
+                                global const float* face_normals,
+                                global const float* vertices,
+                                global const uint* indices, uint face_count) {
   const size_t current_particle_index = get_global_id(0);
   output_data[current_particle_index] = input_data[current_particle_index];
   particle output_particle = input_data[current_particle_index];

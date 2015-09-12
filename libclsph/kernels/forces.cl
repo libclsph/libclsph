@@ -2,21 +2,21 @@
 #include "grid.cl"
 
 float compute_density_with_grid(
-    size_t current_particle_index, global const particle *others,
+    size_t current_particle_index, global const particle* others,
     const simulation_parameters params,
     const precomputed_kernel_values smoothing_terms,
-    global const unsigned int *grid_cell_particle_list);
+    global const unsigned int* grid_cell_particle_list);
 float3 compute_internal_forces_with_grid(
-    size_t current_particle_index, global const particle *others,
+    size_t current_particle_index, global const particle* others,
     const simulation_parameters params,
     const precomputed_kernel_values smoothing_terms,
-    global const unsigned int *grid_cell_particle_list);
+    global const unsigned int* grid_cell_particle_list);
 
 float compute_density_with_grid(
-    size_t current_particle_index, global const particle *others,
+    size_t current_particle_index, global const particle* others,
     const simulation_parameters params,
     const precomputed_kernel_values smoothing_terms,
-    global const unsigned int *grid_cell_particle_list) {
+    global const unsigned int* grid_cell_particle_list) {
   float density = 0.f;
 
   uint3 cell_coords =
@@ -43,10 +43,10 @@ float compute_density_with_grid(
 }
 
 float3 compute_internal_forces_with_grid(
-    size_t current_particle_index, global const particle *others,
+    size_t current_particle_index, global const particle* others,
     const simulation_parameters params,
     const precomputed_kernel_values smoothing_terms,
-    global const unsigned int *grid_cell_particle_list) {
+    global const unsigned int* grid_cell_particle_list) {
   float3 pressure_term = {0.f, 0.f, 0.f};
   float3 viscosity_term = {0.f, 0.f, 0.f};
   // compute the inward surface normal, it's the gradient of the color field

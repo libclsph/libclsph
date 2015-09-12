@@ -14,10 +14,8 @@ class sph_simulation {
   simulation_parameters parameters;
   precomputed_kernel_values precomputed_terms;
 
-  std::function<void(particle *, const simulation_parameters &, bool)>
-      pre_frame;
-  std::function<void(particle *, const simulation_parameters &, bool)>
-      post_frame;
+  std::function<void(particle*, const simulation_parameters&, bool)> pre_frame;
+  std::function<void(particle*, const simulation_parameters&, bool)> post_frame;
 
   void load_settings(std::string fluid_file_name,
                      std::string parameters_file_name);
@@ -28,9 +26,9 @@ class sph_simulation {
   scene current_scene;
 
  private:
-  void init_particles(particle *buffer, const simulation_parameters &);
-  void sort_particles(particle *, cl::Buffer &, cl::Buffer &, unsigned int *);
-  void simulate_single_frame(particle *, particle *);
+  void init_particles(particle* buffer, const simulation_parameters&);
+  void sort_particles(particle*, cl::Buffer&, cl::Buffer&, unsigned int*);
+  void simulate_single_frame(particle*, particle*);
 
   cl::Context context_;
   cl::CommandQueue queue_;

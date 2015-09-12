@@ -12,9 +12,9 @@ typedef struct {
   int collision_happened;
 } collision;
 
-int detect_collision(collision *c, float3 p0, float3 p1,
-                     global const float *face_normals,
-                     global const float *vertices, global const uint *indices,
+int detect_collision(collision* c, float3 p0, float3 p1,
+                     global const float* face_normals,
+                     global const float* vertices, global const uint* indices,
                      uint face_count) {
   c->collision_happened = 0;
 
@@ -88,7 +88,7 @@ int detect_collision(collision *c, float3 p0, float3 p1,
   return c->collision_happened;
 }
 
-int respond(collision_response *response, collision c, float restitution,
+int respond(collision_response* response, collision c, float restitution,
             float time_elapsed) {
   // hack to avoid points directly on the faces, the collision detection code
   // should be
@@ -108,8 +108,8 @@ int respond(collision_response *response, collision c, float restitution,
 // the advection  must be recursive until the entire movement is completed
 collision_response handle_collisions(
     float3 old_position, float3 position, float3 next, float restitution,
-    float time_elapsed, global const float *face_normals,
-    global const float *vertices, global const uint *indices, uint face_count) {
+    float time_elapsed, global const float* face_normals,
+    global const float* vertices, global const uint* indices, uint face_count) {
   collision_response response = {
       position, next, 0, time_elapsed,
   };
