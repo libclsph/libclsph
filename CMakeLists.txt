@@ -10,7 +10,7 @@ find_package(OpenCL REQUIRED)
 include_directories(${OPENCL_INCLUDE_DIRS})
 
 # Set common compiler flags
-set(COMPILE_FLAGS "--std=c++11 -g -Wfatal-errors -Wall -Wextra -Wno-unused-parameter -Wno-sign-compare -Wno-deprecated-declarations")
+set(COMPILE_FLAGS "--std=c++11 -g -Wfatal-errors -Wall -Wextra -Wno-unused-parameter -Wno-sign-compare -Wno-deprecated-declarations -O2")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPILE_FLAGS}")
 
 # Copy headers
